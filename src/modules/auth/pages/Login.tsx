@@ -2,7 +2,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { GalleryVerticalEndIcon } from "@hugeicons/core-free-icons"
 import { LoginForm } from "@/modules/auth/components/LoginForm"
 
-export default function Login() {
+export function Login() {
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">
@@ -30,3 +30,5 @@ export default function Login() {
     </div>
   )
 }
+
+export default Login

@@ -11,6 +11,16 @@ export function handleUnauthorized(): void {
   }
 }
 
+// Les 401 des endpoints d'auth eux-mêmes (identifiants invalides, refresh
+// expiré) ne sont pas des expirations de session : ils ne doivent pas
+// déclencher handleUnauthorized, sous peine d'écraser l'erreur métier
+// (ex. "Invalid credentials") par une purge + redirect.
+const AUTH_PATHS = ["auth/login", "auth/refresh"]
+
+function isAuthEndpoint(url: string): boolean {
+  return AUTH_PATHS.some((path) => new URL(url).pathname.endsWith(path))
+}
+
 export const api = ky.create({
   prefix: import.meta.env.VITE_API_URL,
   credentials: "include",
@@ -23,8 +33,10 @@ export const api = ky.create({
       },
     ],
     afterResponse: [
-      ({ response }) => {
-        if (response.status === 401) handleUnauthorized()
+      ({ request, response }) => {
+        if (response.status === 401 && !isAuthEndpoint(request.url)) {
+          handleUnauthorized()
+        }
       },
     ],
     beforeError: [

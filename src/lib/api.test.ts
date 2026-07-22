@@ -56,4 +56,17 @@ describe("api client", () => {
       expect(caught.response.status).toBe(400)
     }
   })
+
+  it("ne déclenche pas le handler de session expirée sur un 401 de /auth/login", async () => {
+    setAccessToken("abc123")
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 401 })
+    )
+
+    await expect(
+      api.post("http://api.test/auth/login", { json: {} }).json()
+    ).rejects.toThrow()
+
+    expect(getAccessToken()).toBe("abc123")
+  })
 })

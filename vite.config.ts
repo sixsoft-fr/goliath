@@ -17,7 +17,7 @@ export default defineConfig({
     // e2e/ holds Playwright specs (see playwright.config.ts) which use
     // @playwright/test's test() runner and must not be picked up by Vitest.
     exclude: [...configDefaults.exclude, "e2e/**"],
-    // No unit tests exist yet in this task; don't fail the run for that.
+    // Keep exit 0 when a filter matches no files.
     passWithNoTests: true,
   },
 })

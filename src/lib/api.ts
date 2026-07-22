@@ -28,13 +28,15 @@ export const api = ky.create({
       },
     ],
     beforeError: [
-      async ({ error }) => {
+      ({ error }) => {
         if (!isHTTPError(error)) return error
-        const body = await error.response
-          .clone()
-          .json()
-          .catch(() => null)
-        if (body && typeof body.message === "string") {
+        const body = error.data
+        if (
+          body &&
+          typeof body === "object" &&
+          "message" in body &&
+          typeof body.message === "string"
+        ) {
           error.message = body.message
         }
         return error

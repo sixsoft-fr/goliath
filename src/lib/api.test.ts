@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { isHTTPError } from "ky"
 import { api } from "./api"
 import { getAccessToken, setAccessToken } from "@/modules/auth/token-store"
 
@@ -31,5 +32,28 @@ describe("api client", () => {
     await expect(api.get("http://api.test/secret").json()).rejects.toThrow()
 
     expect(getAccessToken()).toBeNull()
+  })
+
+  it("mappe le message d'erreur depuis le corps JSON d'une réponse en erreur", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ message: "Invalid credentials" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      })
+    )
+
+    let caught: unknown
+    try {
+      await api.get("http://api.test/login").json()
+    } catch (error) {
+      caught = error
+    }
+
+    expect(caught).toBeInstanceOf(Error)
+    expect((caught as Error).message).toBe("Invalid credentials")
+    expect(isHTTPError(caught)).toBe(true)
+    if (isHTTPError(caught)) {
+      expect(caught.response.status).toBe(400)
+    }
   })
 })

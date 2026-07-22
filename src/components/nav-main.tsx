@@ -46,7 +46,11 @@ export function NavMain({
             >
               {item.icon}
               <span>{item.title}</span>
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="ml-auto transition-transform duration-200 group-data-open/collapsible:rotate-90" />
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
+                strokeWidth={2}
+                className="ml-auto transition-transform duration-200 group-data-open/collapsible:rotate-90"
+              />
             </CollapsibleTrigger>
             <CollapsibleContent>
               <SidebarMenuSub>

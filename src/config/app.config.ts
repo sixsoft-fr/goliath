@@ -1,3 +1,9 @@
-export type AppConfig = {}
+import { type AuthConfig, authConfig as auth } from "@/modules/auth/auth.config";
 
-export const appConfig: AppConfig = {}
+export type AppConfig = {
+    auth: AuthConfig;
+}
+
+export const appConfig: AppConfig = {
+    auth,
+}

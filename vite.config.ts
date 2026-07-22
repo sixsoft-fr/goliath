@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
@@ -14,6 +13,9 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Base URL for the ky client during tests, so relative calls (e.g.
+    // "auth/refresh") resolve. Requests in tests mock fetch by pathname.
+    env: { VITE_API_URL: "http://api.test" },
     // e2e/ holds Playwright specs (see playwright.config.ts) which use
     // @playwright/test's test() runner and must not be picked up by Vitest.
     exclude: [...configDefaults.exclude, "e2e/**"],

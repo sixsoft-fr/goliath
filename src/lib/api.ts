@@ -22,14 +22,41 @@ export function handleUnauthorized(): void {
   }
 }
 
-// Les 401 des endpoints d'auth eux-mêmes (identifiants invalides, refresh
-// expiré) ne sont pas des expirations de session : ils ne doivent pas
-// déclencher handleUnauthorized, sous peine d'écraser l'erreur métier
-// (ex. "Invalid credentials") par une purge + redirect.
-const AUTH_PATHS = ["auth/login", "auth/refresh"]
+// Endpoints exempts du flux 401 (refresh + replay + redirect) :
+// - auth/login, auth/refresh : un 401 y est une erreur métier (identifiants
+//   invalides, refresh expiré), pas une expiration de session.
+// - auth (GET /auth = utilisateur courant) : sonde de session appelée au
+//   bootstrap ; son 401 doit remonter tel quel pour que attemptSilentRefresh
+//   échoue en silence, sans relancer un refresh ni rediriger.
+const AUTH_PATHS = ["/auth", "/auth/login", "/auth/refresh"]
 
 function isAuthEndpoint(url: string): boolean {
-  return AUTH_PATHS.some((path) => new URL(url).pathname.endsWith(path))
+  const { pathname } = new URL(url)
+  return AUTH_PATHS.some((path) => pathname.endsWith(path))
+}
+
+// Refresh single-flight : des 401 concurrents (ou le bootstrap) ne déclenchent
+// qu'un seul POST /auth/refresh. Le refresh s'appuie sur le cookie httpOnly
+// (credentials: "include"), ne renvoie que { accessToken }, et met à jour le
+// token en mémoire. Échec → token purgé, renvoie null.
+let refreshInFlight: Promise<string | null> | null = null
+
+export function refreshAccessToken(): Promise<string | null> {
+  refreshInFlight ??= api
+    .post("auth/refresh")
+    .json<{ accessToken: string }>()
+    .then(({ accessToken }) => {
+      setAccessToken(accessToken)
+      return accessToken
+    })
+    .catch(() => {
+      setAccessToken(null)
+      return null
+    })
+    .finally(() => {
+      refreshInFlight = null
+    })
+  return refreshInFlight
 }
 
 export const api = ky.create({
@@ -44,9 +71,26 @@ export const api = ky.create({
       },
     ],
     afterResponse: [
-      ({ request, response }) => {
-        if (response.status === 401 && !isAuthEndpoint(request.url)) {
+      async ({ request, response }) => {
+        if (response.status !== 401 || isAuthEndpoint(request.url)) return
+
+        const token = await refreshAccessToken()
+        if (!token) {
           handleUnauthorized()
+          return
+        }
+
+        request.headers.set("Authorization", `Bearer ${token}`)
+        // ponytail: replay via fetch nu — pas de hooks, donc pas de ré-entrée
+        // dans l'instance api (qui reboucle sur refresh). Pour une mutation dont
+        // le body a déjà été streamé, fetch(request) lève (Request consommé) : on
+        // retombe alors sur la réponse 401 d'origine pour surfacer une HTTPError
+        // propre plutôt qu'un TypeError opaque. Les 401 d'expiration viennent
+        // surtout des GET (react-query). Upgrade : retry ky natif si besoin.
+        try {
+          return await fetch(request)
+        } catch {
+          return response
         }
       },
     ],

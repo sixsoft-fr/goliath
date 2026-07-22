@@ -9,13 +9,25 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { appConfig } from "@/config/app.config"
+import { useLogin } from "@/modules/auth/hooks/use-login"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
+  const login = useLogin()
+
+  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const data = new FormData(event.currentTarget)
+    login.mutate({
+      email: String(data.get("email")),
+      password: String(data.get("password")),
+    })
+  }
+
   return (
-    <form className={cn("flex flex-col gap-6", className)} {...props}>
+    <form onSubmit={onSubmit} className={cn("flex flex-col gap-6", className)} {...props}>
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">Login to your account</h1>
@@ -25,7 +37,7 @@ export function LoginForm({
         </div>
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" type="email" placeholder="m@example.com" required />
+          <Input id="email" name="email" type="email" placeholder="m@example.com" required />
         </Field>
         <Field>
           <div className="flex items-center">
@@ -37,10 +49,17 @@ export function LoginForm({
               Forgot your password?
             </a>
           </div>
-          <Input id="password" type="password" required />
+          <Input id="password" name="password" type="password" required />
         </Field>
         <Field>
-          <Button type="submit">Login</Button>
+          {login.isError && (
+            <FieldDescription className="text-center text-destructive">
+              {login.error.message}
+            </FieldDescription>
+          )}
+          <Button type="submit" disabled={login.isPending}>
+            {login.isPending ? "Signing in…" : "Login"}
+          </Button>
         </Field>
         <FieldSeparator>Or continue with</FieldSeparator>
         <Field>
@@ -53,7 +72,7 @@ export function LoginForm({
             </svg>
             Login with GitHub
           </Button>
-          { !!!appConfig.auth.inviteOnly && (
+          { !appConfig.auth.inviteOnly && (
             <FieldDescription className="text-center">
               Don&apos;t have an account?{" "}
               <a href="#" className="underline underline-offset-4">

@@ -8,6 +8,7 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { appConfig } from "@/config/app.config"
 
 export function LoginForm({
   className,
@@ -52,12 +53,14 @@ export function LoginForm({
             </svg>
             Login with GitHub
           </Button>
-          <FieldDescription className="text-center">
-            Don&apos;t have an account?{" "}
-            <a href="#" className="underline underline-offset-4">
-              Sign up
-            </a>
-          </FieldDescription>
+          { !!!appConfig.auth.inviteOnly && (
+            <FieldDescription className="text-center">
+              Don&apos;t have an account?{" "}
+              <a href="#" className="underline underline-offset-4">
+                Sign up
+              </a>
+            </FieldDescription>
+          )}
         </Field>
       </FieldGroup>
     </form>

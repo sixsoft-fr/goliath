@@ -1,7 +1,4 @@
-"use client"
-
 import * as React from "react"
-
 import { NavMain } from "@/components/ds/sidebar/nav-main"
 import { NavProjects } from "@/components/ds/sidebar/nav-projects"
 import { NavUser } from "@/components/ds/sidebar/nav-user"
@@ -15,9 +12,6 @@ import {
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  LayoutBottomIcon,
-  AudioWave01Icon,
-  CommandIcon,
   ComputerTerminalIcon,
   RoboticIcon,
   BookOpen02Icon,
@@ -26,6 +20,7 @@ import {
   PieChartIcon,
   MapsIcon,
 } from "@hugeicons/core-free-icons"
+import { appConfig } from "@/config/app.config"
 
 // This is sample data.
 const data = {
@@ -34,23 +29,6 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: <HugeiconsIcon icon={LayoutBottomIcon} strokeWidth={2} />,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: <HugeiconsIcon icon={AudioWave01Icon} strokeWidth={2} />,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: <HugeiconsIcon icon={CommandIcon} strokeWidth={2} />,
-      plan: "Free",
-    },
-  ],
   navMain: [
     {
       title: "Playground",
@@ -161,7 +139,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={appConfig.team.teams} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

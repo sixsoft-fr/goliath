@@ -1,6 +1,7 @@
 import { lazy } from "react"
 import { Route, Routes } from "react-router";
 import AppLayout from "./components/ds/layouts/app.layout";
+import { RequireAuth } from "@/modules/auth/require-auth"
 
 const Home = lazy(() => import("@/modules/home/pages/Home"))
 const NotFound = lazy(() => import("@/modules/errors/pages/NotFound"))
@@ -12,7 +13,7 @@ export function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
 
-      <Route path="app" element={<AppLayout />}>
+      <Route path="app" element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<Home />} />
       </Route>
 

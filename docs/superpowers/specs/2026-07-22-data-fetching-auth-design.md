@@ -20,7 +20,7 @@ Backend existant, base URL via `VITE_API_URL`.
 | Endpoint `/auth/refresh` | Incertain → **seam d'extension** (logout par défaut) |
 | Retry | Piloté par react-query (`ky retry: 0`) |
 | Périmètre | Infra + login câblé |
-| Runner de test | Vitest (hypothèse — pas encore dans le repo) |
+| Runner de test | Vitest (à ajouter au repo) |
 
 ## Décision d'architecture : pont token ↔ ky
 
@@ -35,7 +35,7 @@ testable isolément.
 
 ## Composants
 
-### `src/modules/data/`
+### `src/lib/` (`modules/data/` est réservé à un autre usage)
 - **`api.ts`** — instance `ky.create()` :
   - `prefixUrl: import.meta.env.VITE_API_URL`
   - `credentials: "include"` (envoie le cookie refresh)
@@ -44,7 +44,8 @@ testable isolément.
   - `hooks.afterResponse` — sur `401`, appelle `handleUnauthorized()` (voir Flux 401)
   - `hooks.beforeError` — mappe le body `{ message }` de l'API vers `error.message`
 - **`query.tsx`** — `QueryClient` (`retry: 2`, `staleTime` raisonnable) + `<QueryProvider>`.
-- **`index.ts`** — exports publics (`api`, `QueryProvider`).
+
+Import direct (`@/lib/api`, `@/lib/query`) — pas de barrel, cohérent avec `lib/utils.ts` existant.
 
 ### `src/modules/auth/`
 - **`token-store.ts`** — `getAccessToken()` / `setAccessToken(token | null)` en mémoire.

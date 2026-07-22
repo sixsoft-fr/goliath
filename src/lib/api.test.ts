@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { isHTTPError } from "ky"
-import { api } from "./api"
+import { api, setUnauthorizedHandler } from "./api"
 import { getAccessToken, setAccessToken } from "@/modules/auth/token-store"
 
 describe("api client", () => {
   beforeEach(() => {
     setAccessToken(null)
+    setUnauthorizedHandler(() => {})
     vi.restoreAllMocks()
   })
 
@@ -68,5 +69,21 @@ describe("api client", () => {
     ).rejects.toThrow()
 
     expect(getAccessToken()).toBe("abc123")
+  })
+
+  it("notifie le handler de session expirée sur un 401 non-auth, pas sur un 401 auth", async () => {
+    const onUnauthorized = vi.fn()
+    setUnauthorizedHandler(onUnauthorized)
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(null, { status: 401 })
+    )
+
+    await expect(api.get("http://api.test/secret").json()).rejects.toThrow()
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
+
+    await expect(
+      api.post("http://api.test/auth/login", { json: {} }).json()
+    ).rejects.toThrow()
+    expect(onUnauthorized).toHaveBeenCalledTimes(1)
   })
 })

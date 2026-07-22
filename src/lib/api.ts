@@ -1,11 +1,22 @@
 import ky, { isHTTPError } from "ky"
 import { getAccessToken, setAccessToken } from "@/modules/auth/token-store"
 
-// SEAM du flux 401. Aujourd'hui : purge le token + redirect /login.
+// Pont vers l'état React : ky est hors-React et ne peut pas appeler logout()
+// directement. AuthProvider enregistre son logout au montage, pour que
+// handleUnauthorized vide aussi `user` (pas seulement le token) et évite une
+// incohérence transitoire (isAuthenticated resté true avant le reload).
+let onUnauthorized: () => void = () => {}
+
+export function setUnauthorizedHandler(fn: () => void): void {
+  onUnauthorized = fn
+}
+
+// SEAM du flux 401. Aujourd'hui : purge le token + état React + redirect /login.
 // Quand POST /auth/refresh sera confirmé : tenter le refresh (via cookie),
 // setAccessToken(nouveau token), puis rejouer la requête. Seul endroit à changer.
 export function handleUnauthorized(): void {
   setAccessToken(null)
+  onUnauthorized()
   if (typeof window !== "undefined") {
     window.location.href = "/login"
   }

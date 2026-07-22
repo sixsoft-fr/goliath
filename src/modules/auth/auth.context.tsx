@@ -2,6 +2,7 @@
 import { createContext, use, useEffect, useState } from "react"
 import type { ReactNode } from "react"
 import { setAccessToken } from "./token-store"
+import { setUnauthorizedHandler } from "@/lib/api"
 import { attemptSilentRefresh } from "./session"
 import type { AuthSession, User } from "./types"
 
@@ -28,6 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null)
     setUser(null)
   }
+
+  // Le flux 401 de ky (handleUnauthorized) appelle ce logout pour vider aussi
+  // l'état React, pas seulement le token. Nettoyé au démontage.
+  useEffect(() => {
+    setUnauthorizedHandler(logout)
+    return () => setUnauthorizedHandler(() => {})
+  }, [])
 
   useEffect(() => {
     let cancelled = false

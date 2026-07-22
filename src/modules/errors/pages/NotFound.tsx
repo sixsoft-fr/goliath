@@ -11,3 +11,5 @@ export function NotFound() {
     </Page>
   )
 }
+
+export default NotFound

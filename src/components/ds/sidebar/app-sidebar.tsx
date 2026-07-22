@@ -21,6 +21,7 @@ import {
   MapsIcon,
 } from "@hugeicons/core-free-icons"
 import { appConfig } from "@/config/app.config"
+import TeamWithoutSwitcher from "./team-without-switcher"
 
 // This is sample data.
 const data = {
@@ -139,7 +140,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={appConfig.team.teams} />
+        {
+          appConfig.team.allowSwitchingTeams ? 
+          <TeamSwitcher teams={appConfig.team.teams} />
+          : <TeamWithoutSwitcher team={appConfig.team.teams[0]} />
+        }
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

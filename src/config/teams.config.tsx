@@ -14,7 +14,15 @@ export type Team = {
 }
 
 export const teamConfig: TeamConfig = {
+    /**
+     * If true, the user can switch between teams.
+     */
     allowSwitchingTeams: false,
+    
+    /**
+     * Teams are used to group users and projects.
+     * If allowSwitchingTeams is false, only the first team will be shown.
+     */
     teams: [
         {
             id: "1",

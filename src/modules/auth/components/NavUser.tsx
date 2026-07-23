@@ -25,12 +25,14 @@ import {
 } from "@hugeicons/core-free-icons"
 import { useAuth } from "@/modules/auth/auth.context"
 import { useNavigate } from "react-router"
+import { useTranslation } from "react-i18next"
 import { api } from "@/lib/api"
 
 export function NavUser() {
   const navigate = useNavigate();
   const { isMobile } = useSidebar();
   const { logout, user } = useAuth();
+  const { t } = useTranslation("auth");
 
   const handleLogout = () => {
     // Invalide le cookie de refresh httpOnly côté serveur, sinon un reload
@@ -92,28 +94,28 @@ export function NavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
-                Upgrade to Pro
+                {t("menu.upgrade")}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <HugeiconsIcon icon={CheckmarkBadgeIcon} strokeWidth={2} />
-                Account
+                {t("menu.account")}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} />
-                Billing
+                {t("menu.billing")}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <HugeiconsIcon icon={NotificationIcon} strokeWidth={2} />
-                Notifications
+                {t("menu.notifications")}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <HugeiconsIcon icon={LogoutIcon} strokeWidth={2} />
-              Log out
+              {t("menu.logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

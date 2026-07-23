@@ -9,19 +9,22 @@ import { Spinner } from "@/components/ui/spinner"
 import { BrowserRouter } from "react-router"
 import { QueryProvider } from "@/lib/query"
 import { AuthProvider } from "@/modules/auth/auth.context"
+import { EchoProvider } from "@/lib/echo/echo.provider"
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <QueryProvider>
         <AuthProvider>
-          <ThemeProvider>
-            <TooltipProvider>
-              <Suspense fallback={<Spinner className="size-8 w-full" />}>
-                <App />
-              </Suspense>
-            </TooltipProvider>
-          </ThemeProvider>
+          <EchoProvider>
+            <ThemeProvider>
+              <TooltipProvider>
+                <Suspense fallback={<Spinner className="size-8 w-full" />}>
+                  <App />
+                </Suspense>
+              </TooltipProvider>
+            </ThemeProvider>
+          </EchoProvider>
         </AuthProvider>
       </QueryProvider>
     </BrowserRouter>

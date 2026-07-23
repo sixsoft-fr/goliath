@@ -1,9 +1,18 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import { GalleryVerticalEndIcon } from "@hugeicons/core-free-icons"
+import { Navigate } from "react-router"
 import { LoginForm } from "@/modules/auth/components/LoginForm"
+import { useAuth } from "@/modules/auth/auth.context"
 import lin from "@/assets/lin.jpg"
 
 export function Login() {
+  const { isAuthenticated, isBootstrapping } = useAuth()
+
+  // Symétrique de RequireAuth : attendre le bootstrap, puis si une session a
+  // été restaurée (cookie de refresh valide), ne pas afficher le formulaire.
+  if (isBootstrapping) return null
+  if (isAuthenticated) return <Navigate to="/app" replace />
+
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="flex flex-col gap-4 p-6 md:p-10">

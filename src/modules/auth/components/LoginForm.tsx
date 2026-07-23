@@ -61,8 +61,11 @@ export function LoginForm({
             {login.isPending ? "Signing in…" : "Login"}
           </Button>
         </Field>
+        { appConfig.auth.enableSocialLogin && (
         <FieldSeparator>Or continue with</FieldSeparator>
+        )}
         <Field>
+          { appConfig.auth.enableSocialLogin && (
           <Button variant="outline" type="button">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
               <path
@@ -72,6 +75,7 @@ export function LoginForm({
             </svg>
             Login with GitHub
           </Button>
+          )}
           { !appConfig.auth.inviteOnly && (
             <FieldDescription className="text-center">
               Don&apos;t have an account?{" "}

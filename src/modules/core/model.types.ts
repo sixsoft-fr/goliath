@@ -1,6 +1,7 @@
 export type Model = {
     id: number;
     uuid: string;
+    slug?: string;
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date | null;

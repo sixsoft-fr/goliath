@@ -1,5 +1,5 @@
 import ky, { isHTTPError } from "ky"
-import { getAccessToken, setAccessToken } from "@/modules/auth/token-store"
+import { getAccessToken, setAccessToken, getTokenGeneration } from "@/modules/auth/token-store"
 import { appConfig } from "@/config/app.config"
 
 // Pont vers l'état React : ky est hors-React et ne peut pas appeler logout()
@@ -43,10 +43,14 @@ function isAuthEndpoint(url: string): boolean {
 let refreshInFlight: Promise<string | null> | null = null
 
 export function refreshAccessToken(): Promise<string | null> {
+  const generation = getTokenGeneration()
   refreshInFlight ??= api
     .post("auth/refresh")
     .json<{ accessToken: string }>()
     .then(({ accessToken }) => {
+      // Un logout/login pendant le refresh a changé la génération : ne pas
+      // ressusciter un token désormais périmé.
+      if (getTokenGeneration() !== generation) return null
       setAccessToken(accessToken)
       return accessToken
     })

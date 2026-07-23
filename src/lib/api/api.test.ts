@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { isHTTPError } from "ky"
-import { api, setUnauthorizedHandler } from "./api"
+import { api, setUnauthorizedHandler, refreshAccessToken } from "./api"
 import { getAccessToken, setAccessToken } from "@/modules/auth/token-store"
 
 // The ky client's prefix is set to http://api.test in the Vitest env
@@ -123,6 +123,26 @@ describe("api client", () => {
     await Promise.all([api.get("a").json(), api.get("b").json()])
 
     expect(seen["/auth/refresh"]).toBe(1)
+  })
+
+  it("un logout pendant un refresh en vol ne ressuscite pas le token vidé", async () => {
+    setAccessToken("stale")
+    let resolveRefresh!: (r: Response) => void
+    const pending = new Promise<Response>((res) => {
+      resolveRefresh = res
+    })
+    vi.spyOn(globalThis, "fetch").mockImplementation((input) =>
+      pathOf(input as Request) === "/auth/refresh"
+        ? pending
+        : Promise.resolve(json({ ok: true }))
+    )
+
+    const refreshP = refreshAccessToken()
+    setAccessToken(null) // logout survient pendant que le refresh est en vol
+    resolveRefresh(json({ accessToken: "fresh" }))
+
+    await expect(refreshP).resolves.toBeNull()
+    expect(getAccessToken()).toBeNull()
   })
 
   it("sur 401 d'une mutation, si le replay est impossible, renvoie une HTTPError 401 (pas un TypeError)", async () => {

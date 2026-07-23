@@ -4,7 +4,7 @@ export type User = Model & {
   email: string
   emailVerifiedAt: Date | null
 
-  name?: string
+  name: string
   locale: string;
   avatar: string | null;
   slug: string

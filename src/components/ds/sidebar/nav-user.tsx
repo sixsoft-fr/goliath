@@ -51,7 +51,7 @@ export function NavUser() {
           >
             <Avatar>
               <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
-              <AvatarFallback>{user.name!.charAt(0)}</AvatarFallback>
+              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{user.name}</span>

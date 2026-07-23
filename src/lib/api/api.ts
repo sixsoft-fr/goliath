@@ -1,5 +1,6 @@
 import ky, { isHTTPError } from "ky"
 import { getAccessToken, setAccessToken } from "@/modules/auth/token-store"
+import { appConfig } from "@/config/app.config"
 
 // Pont vers l'état React : ky est hors-React et ne peut pas appeler logout()
 // directement. AuthProvider enregistre son logout au montage, pour que
@@ -60,7 +61,7 @@ export function refreshAccessToken(): Promise<string | null> {
 }
 
 export const api = ky.create({
-  prefix: import.meta.env.VITE_API_URL,
+  prefix: appConfig.api.baseUrl,
   credentials: "include",
   retry: 0,
   hooks: {

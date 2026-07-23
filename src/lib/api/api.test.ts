@@ -62,7 +62,7 @@ describe("api client", () => {
     setUnauthorizedHandler(onUnauthorized)
     const fetchMock = mockFetch(() => new Response(null, { status: 401 }))
 
-    await expect(api.post("auth/login", { json: {} }).json()).rejects.toThrow()
+    await expect(api.post("auth", { json: {} }).json()).rejects.toThrow()
 
     expect(onUnauthorized).not.toHaveBeenCalled()
     expect(getAccessToken()).toBe("abc123")

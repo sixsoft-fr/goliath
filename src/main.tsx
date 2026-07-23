@@ -5,15 +5,21 @@ import App from "./App.tsx"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { BrowserRouter } from "react-router"
+import { QueryProvider } from "@/lib/query"
+import { AuthProvider } from "@/modules/auth/auth.context"
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
-        <TooltipProvider>
-          <App />
-        </TooltipProvider>
-      </ThemeProvider>
+      <QueryProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <TooltipProvider>
+              <App />
+            </TooltipProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryProvider>
     </BrowserRouter>
   </StrictMode>
 )

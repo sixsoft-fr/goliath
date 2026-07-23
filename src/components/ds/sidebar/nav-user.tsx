@@ -23,17 +23,28 @@ import {
   NotificationIcon,
   LogoutIcon,
 } from "@hugeicons/core-free-icons"
+import { useAuth } from "@/modules/auth/auth.context"
+import { useNavigate } from "react-router"
+import { api } from "@/lib/api"
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string
-    email: string
-    avatar: string
+export function NavUser() {
+  const navigate = useNavigate();
+  const { isMobile } = useSidebar();
+  const { logout, user } = useAuth();
+
+  const handleLogout = () => {
+    // Invalide le cookie de refresh httpOnly côté serveur, sinon un reload
+    // pourrait restaurer la session via attemptSilentRefresh. Fire-and-forget :
+    // navigate() est client-side, la requête n'est donc pas annulée.
+    api.delete("auth").catch(() => {});
+    logout();
+    navigate("/login");
   }
-}) {
-  const { isMobile } = useSidebar()
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -44,8 +55,8 @@ export function NavUser({
             }
           >
             <Avatar>
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>CN</AvatarFallback>
+              <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
+              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">{user.name}</span>
@@ -67,7 +78,7 @@ export function NavUser({
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar>
-                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -100,7 +111,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <HugeiconsIcon icon={LogoutIcon} strokeWidth={2} />
               Log out
             </DropdownMenuItem>

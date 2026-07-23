@@ -73,7 +73,15 @@ export const api = ky.create({
     ],
     afterResponse: [
       async ({ request, response }) => {
-        if (response.status !== 401 || isAuthEndpoint(request.url)) return
+        if (response.status !== 401) return
+
+        // 401 sur un endpoint d'auth (login échoué, refresh/me expirés) : pas de
+        // refresh ni redirect (erreur métier), mais on purge le token en mémoire
+        // — sinon beforeRequest continuerait d'envoyer un Bearer périmé.
+        if (isAuthEndpoint(request.url)) {
+          setAccessToken(null)
+          return
+        }
 
         const token = await refreshAccessToken()
         if (!token) {

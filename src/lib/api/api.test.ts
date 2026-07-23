@@ -56,7 +56,7 @@ describe("api client", () => {
     expect(isHTTPError(caught)).toBe(true)
   })
 
-  it("ne tente ni refresh ni handler sur un 401 d'un endpoint d'auth", async () => {
+  it("purge le token mais ne tente ni refresh ni handler sur un 401 d'un endpoint d'auth", async () => {
     setAccessToken("abc123")
     const onUnauthorized = vi.fn()
     setUnauthorizedHandler(onUnauthorized)
@@ -65,7 +65,8 @@ describe("api client", () => {
     await expect(api.post("auth", { json: {} }).json()).rejects.toThrow()
 
     expect(onUnauthorized).not.toHaveBeenCalled()
-    expect(getAccessToken()).toBe("abc123")
+    // Le Bearer périmé est purgé pour ne pas être renvoyé à la requête suivante.
+    expect(getAccessToken()).toBeNull()
     const refreshCalls = fetchMock.mock.calls.filter(
       ([req]) => pathOf(req as Request) === "/auth/refresh"
     )

@@ -25,6 +25,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { useAuth } from "@/modules/auth/auth.context"
 import { useNavigate } from "react-router"
+import { api } from "@/lib/api"
 
 export function NavUser() {
   const navigate = useNavigate();
@@ -32,6 +33,10 @@ export function NavUser() {
   const { logout, user } = useAuth();
 
   const handleLogout = () => {
+    // Invalide le cookie de refresh httpOnly côté serveur, sinon un reload
+    // pourrait restaurer la session via attemptSilentRefresh. Fire-and-forget :
+    // navigate() est client-side, la requête n'est donc pas annulée.
+    api.delete("auth").catch(() => {});
     logout();
     navigate("/login");
   }

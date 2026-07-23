@@ -15,11 +15,12 @@ describe("attemptSilentRefresh", () => {
     vi.restoreAllMocks()
   })
 
-  it("restaure la session : refresh puis GET /auth pour l'utilisateur", async () => {
+  it("restaure la session : refresh puis GET /auth/me pour l'utilisateur", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const path = new URL((input as Request).url).pathname
       if (path === "/auth/refresh") return Promise.resolve(json({ accessToken: "t" }))
-      if (path === "/auth") return Promise.resolve(json({ id: "1", email: "a@b.c" }))
+      if (path === "/auth/me")
+        return Promise.resolve(json({ user: { id: "1", email: "a@b.c" } }))
       return Promise.resolve(new Response(null, { status: 404 }))
     })
 
@@ -43,13 +44,13 @@ describe("attemptSilentRefresh", () => {
     expect(getAccessToken()).toBeNull()
   })
 
-  it("renvoie null si GET /auth échoue, sans relancer de refresh", async () => {
+  it("renvoie null si GET /auth/me échoue, sans relancer de refresh", async () => {
     const seen: Record<string, number> = {}
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const path = new URL((input as Request).url).pathname
       seen[path] = (seen[path] ?? 0) + 1
       if (path === "/auth/refresh") return Promise.resolve(json({ accessToken: "t" }))
-      if (path === "/auth") return Promise.resolve(new Response(null, { status: 401 }))
+      if (path === "/auth/me") return Promise.resolve(new Response(null, { status: 401 }))
       return Promise.resolve(new Response(null, { status: 404 }))
     })
 
@@ -57,7 +58,7 @@ describe("attemptSilentRefresh", () => {
 
     expect(session).toBeNull()
     expect(getAccessToken()).toBeNull()
-    // GET /auth est exempt du flux 401 → pas de second refresh déclenché
+    // GET /auth/me est exempt du flux 401 → pas de second refresh déclenché
     expect(seen["/auth/refresh"]).toBe(1)
   })
 })

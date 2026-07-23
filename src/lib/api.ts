@@ -25,10 +25,10 @@ export function handleUnauthorized(): void {
 // Endpoints exempts du flux 401 (refresh + replay + redirect) :
 // - auth/login, auth/refresh : un 401 y est une erreur métier (identifiants
 //   invalides, refresh expiré), pas une expiration de session.
-// - auth (GET /auth = utilisateur courant) : sonde de session appelée au
+// - auth/me (GET = utilisateur courant) : sonde de session appelée au
 //   bootstrap ; son 401 doit remonter tel quel pour que attemptSilentRefresh
 //   échoue en silence, sans relancer un refresh ni rediriger.
-const AUTH_PATHS = ["/auth", "/auth/login", "/auth/refresh"]
+const AUTH_PATHS = ["/auth/me", "/auth/login", "/auth/refresh"]
 
 function isAuthEndpoint(url: string): boolean {
   const { pathname } = new URL(url)

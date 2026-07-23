@@ -10,7 +10,7 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: (payload: LoginPayload) =>
-      api.post("auth/login", { json: payload }).json<AuthSession>(),
+      api.post("auth", { json: payload }).json<AuthSession>(),
     onSuccess: (session) => {
       login(session)
       navigate("/app")

@@ -25,11 +25,6 @@ import TeamWithoutSwitcher from "./team-without-switcher"
 
 // This is sample data.
 const data = {
-  user: {
-    name: "Test User",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Playground",
@@ -151,7 +146,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarFooter>
         <NavProjects projects={data.projects} />
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

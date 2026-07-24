@@ -55,15 +55,19 @@ function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
 }
 
+// ponytail: div nu, pas MenuPrimitive.GroupLabel — ce dernier exige un
+// <Menu.Group> parent (crash sinon). Nos labels sont des en-têtes autonomes,
+// comme le DropdownMenuLabel de shadcn/Radix. Dans un vrai groupe, utiliser
+// MenuPrimitive.GroupLabel directement.
 function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: MenuPrimitive.GroupLabel.Props & {
+}: React.ComponentProps<"div"> & {
   inset?: boolean
 }) {
   return (
-    <MenuPrimitive.GroupLabel
+    <div
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(

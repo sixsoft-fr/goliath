@@ -1,7 +1,14 @@
-// Access token en mémoire. Lu par le hook beforeRequest de ky (module non-React),
-// écrit par l'AuthProvider. Volontairement pas de persistance : au reload, la
-// session est restaurée via le cookie refresh (voir session.ts).
-let accessToken: string | null = null
+// Access token lu par le hook beforeRequest de ky (module non-React), écrit par
+// l'AuthProvider. Persisté en localStorage pour survivre au refresh de page :
+// le refresh via cookie de session ne fonctionne pas en cross-site HTTP
+// (localhost ↔ laravel-api.test, cookie SameSite=Lax non renvoyé).
+// ponytail: contrepartie = token exposé au XSS. Upgrade propre = corriger le
+// cookie côté API (SameSite=None + HTTPS, ou même domaine) et revenir en
+// mémoire seule + refresh cookie.
+const STORAGE_KEY = "accessToken"
+
+let accessToken: string | null =
+  typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
 
 // Incrémenté à chaque écriture. Permet à un refresh en vol de détecter qu'un
 // logout/login est survenu depuis son démarrage et de ne pas ré-appliquer un
@@ -15,6 +22,9 @@ export function getAccessToken(): string | null {
 export function setAccessToken(token: string | null): void {
   accessToken = token
   generation++
+  if (typeof localStorage === "undefined") return
+  if (token) localStorage.setItem(STORAGE_KEY, token)
+  else localStorage.removeItem(STORAGE_KEY)
 }
 
 export function getTokenGeneration(): number {

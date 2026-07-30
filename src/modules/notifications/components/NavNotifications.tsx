@@ -25,14 +25,23 @@ import {
 import { useNotificationsRealtime } from "../useNotificationsRealtime"
 import type { Notification } from "../notifications.type"
 
-// ponytail: les database notifications Laravel sérialisent data en JSON.
-// On affiche message/title si présent, sinon le brut.
+// ponytail: data peut arriver déjà parsé (objet) ou en string JSON selon l'API.
 export const notificationLabel = (notification: Notification): string => {
+  const raw = notification.data
+  const data: unknown = typeof raw === "string" ? safeParse(raw) : raw
+  if (data && typeof data === "object") {
+    const d = data as { message?: unknown; title?: unknown }
+    if (typeof d.message === "string") return d.message
+    if (typeof d.title === "string") return d.title
+  }
+  return typeof raw === "string" ? raw : JSON.stringify(raw)
+}
+
+const safeParse = (s: string): unknown => {
   try {
-    const data = JSON.parse(notification.data)
-    return data.message ?? data.title ?? notification.data
+    return JSON.parse(s)
   } catch {
-    return notification.data
+    return s
   }
 }
 

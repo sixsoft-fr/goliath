@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { notificationLabel } from "./NavNotifications"
 import type { Notification } from "../notifications.type"
 
-const notification = (data: string): Notification => ({
+const notification = (data: Notification["data"]): Notification => ({
   id: "1",
   type: "test",
   notifiable_type: "user",
@@ -24,5 +24,9 @@ describe("notificationLabel", () => {
 
   it("returns raw data when not JSON", () => {
     expect(notificationLabel(notification("plain text"))).toBe("plain text")
+  })
+
+  it("handles data already parsed as object", () => {
+    expect(notificationLabel(notification({ title: "T", message: "M" }))).toBe("M")
   })
 })

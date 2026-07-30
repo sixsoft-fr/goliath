@@ -2,15 +2,24 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> ⚠️ **Corrections post-implémentation (2026-07-30) — font autorité sur tout ce qui suit.**
+> L'API réelle et le contexte de déploiement (front `localhost` ↔ API `laravel-api.test`, cross-site HTTP) ont invalidé plusieurs choix d'origine. Les points ci-dessous priment sur les extraits de code plus bas :
+> 1. **Endpoint login = `POST /auth`** (pas `/auth/login`).
+> 2. **Réponse login = `{ token, user }`** (clé `token`, pas `accessToken`) → mappée vers `AuthSession { accessToken, user }` dans `use-login.ts`.
+> 3. **Utilisateur courant = `GET /auth`** (pas `/auth/me` — cette route n'existe pas côté API).
+> 4. **Access token persisté en `localStorage`** (pas en mémoire seule) : le refresh via cookie httpOnly est **inopérant en cross-site HTTP** (cookie de session `SameSite=Lax` non renvoyé). Contrepartie XSS assumée ; fix propre = cookie `SameSite=None`+HTTPS ou même site, côté API.
+> 5. **Bootstrap** (`attemptSilentRefresh`) : restaure depuis le token persisté et le valide via `GET /auth`. Ne tente **pas** `/auth/refresh`.
+> 6. La persistance du token n'est plus « hors périmètre » : elle est **implémentée**.
+
 **Goal:** Poser une couche de requêtes HTTP (ky) + état serveur (react-query) et câbler un flux de login JWT sur l'API existante.
 
-**Architecture:** ky (`src/lib/api.ts`) porte le transport — injection du Bearer token, gestion du 401, mapping d'erreur — via ses hooks. Le token vit en mémoire dans un `token-store` module-level que ky lit sans dépendre de React ; un `AuthProvider` React tient l'état réactif (`user`/`isAuthenticated`). react-query (`src/lib/query.tsx`) pilote cache et retry. Le flux 401 passe par un seul point d'extension `handleUnauthorized()`.
+**Architecture:** ky (`src/lib/api.ts`) porte le transport — injection du Bearer token, gestion du 401, mapping d'erreur — via ses hooks. Le token est persisté en `localStorage` via un `token-store` module-level que ky lit sans dépendre de React ; un `AuthProvider` React tient l'état réactif (`user`/`isAuthenticated`). react-query (`src/lib/query.tsx`) pilote cache et retry. Le flux 401 passe par un seul point d'extension `handleUnauthorized()`.
 
 **Tech Stack:** Vite 8, React 19, react-router 8, ky, @tanstack/react-query, Vitest.
 
 ## Global Constraints
 
-- Access token **en mémoire uniquement** (jamais localStorage) — refresh token via cookie httpOnly.
+- Access token **persisté en `localStorage`** (survit au reload) — le refresh via cookie httpOnly est inopérant en cross-site HTTP. Contrepartie XSS assumée (cf. bandeau de correction).
 - ky : `credentials: "include"`, `retry: 0` (react-query pilote le retry).
 - Infra HTTP/query dans `src/lib/` — **ne pas** utiliser `src/modules/data/` (réservé).
 - Alias d'import `@/*` → `./src/*` (déjà configuré).
@@ -113,10 +122,13 @@ git commit -m "chore: add ky, react-query, vitest + env typing"
 Create `src/modules/auth/token-store.ts` :
 
 ```ts
-// Access token en mémoire. Lu par le hook beforeRequest de ky (module non-React),
-// écrit par l'AuthProvider. Volontairement pas de persistance : au reload, la
-// session est restaurée via le cookie refresh (voir session.ts).
-let accessToken: string | null = null
+// Access token persisté en localStorage pour survivre au reload : le refresh via
+// cookie de session est inopérant en cross-site HTTP (SameSite=Lax non renvoyé).
+// Contrepartie XSS assumée ; fix propre = cookie SameSite=None+HTTPS côté API.
+const STORAGE_KEY = "accessToken"
+
+let accessToken: string | null =
+  typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null
 
 export function getAccessToken(): string | null {
   return accessToken
@@ -124,10 +136,13 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string | null): void {
   accessToken = token
+  if (typeof localStorage === "undefined") return
+  if (token) localStorage.setItem(STORAGE_KEY, token)
+  else localStorage.removeItem(STORAGE_KEY)
 }
 ```
 
-> ponytail : get/set d'une variable = trivial, pas de test dédié. Il est exercé par le test de `api.ts` (Task 3).
+> Note : le fichier réel porte aussi un compteur `generation` (anti-réapplication d'un token périmé par un refresh en vol). Voir `src/modules/auth/token-store.ts`.
 
 - [ ] **Step 2: Typecheck**
 
@@ -340,16 +355,23 @@ export type LoginPayload = {
 Create `src/modules/auth/session.ts` :
 
 ```ts
-import type { AuthSession } from "./types"
+import { api } from "@/lib/api"
+import { getAccessToken, setAccessToken } from "./token-store"
+import type { AuthSession, User } from "./types"
 
-// SEAM de restauration de session au démarrage, via le cookie refresh httpOnly.
-// Tant que POST /auth/refresh n'est pas confirmé, renvoie null (= non connecté).
-//
-// Activation future (remplacer le corps par) :
-//   import { api } from "@/lib/api"
-//   return await api.post("auth/refresh").json<AuthSession>().catch(() => null)
+// Restauration de session au démarrage à partir du token persisté (localStorage).
+// Validé via GET /auth (utilisateur courant) ; absent ou expiré (401) → null.
+// Le refresh via cookie n'est pas tenté : inopérant en cross-site HTTP.
 export async function attemptSilentRefresh(): Promise<AuthSession | null> {
-  return null
+  const accessToken = getAccessToken()
+  if (!accessToken) return null
+  try {
+    const { user } = await api.get("auth").json<{ user: User }>()
+    return { user, accessToken }
+  } catch {
+    setAccessToken(null)
+    return null
+  }
 }
 ```
 
@@ -478,8 +500,13 @@ export function useLogin() {
   const navigate = useNavigate()
 
   return useMutation({
-    mutationFn: (payload: LoginPayload) =>
-      api.post("auth/login", { json: payload }).json<AuthSession>(),
+    // POST /auth renvoie { token, user } ; on mappe vers AuthSession { accessToken, user }.
+    mutationFn: async (payload: LoginPayload): Promise<AuthSession> => {
+      const { token, user } = await api
+        .post("auth", { json: payload })
+        .json<{ token: string; user: AuthSession["user"] }>()
+      return { accessToken: token, user }
+    },
     onSuccess: (session) => {
       login(session)
       navigate("/app")
@@ -723,4 +750,4 @@ git commit -m "feat: wire query/auth providers and protect app routes"
 
 **Cohérence des types :** `getAccessToken`/`setAccessToken`, `AuthSession`, `LoginPayload`, `useAuth`, `useLogin`, `handleUnauthorized`, `attemptSilentRefresh`, `QueryProvider`, `AuthProvider`, `RequireAuth` — noms identiques entre définition et consommation. ✅
 
-**Hors périmètre (rappel) :** refresh effectif, login GitHub/OAuth, persistance localStorage — seams prêts, non implémentés (YAGNI).
+**Hors périmètre (rappel) :** login GitHub/OAuth. — La **persistance localStorage** est désormais **implémentée** (cf. bandeau de correction). Le **refresh via cookie** reste non fonctionnel en cross-site HTTP : sa réactivation dépend d'un fix côté API (cookie `SameSite=None`+HTTPS ou même site).

@@ -18,14 +18,14 @@ const PASSWORD = process.env.E2E_PASSWORD ?? "secret-password"
 test("cliquer sur Notifications affiche le message sans crash React", async ({
   page,
 }) => {
-  // Forme exacte du bug : `data` est un objet, pas une string JSON.
-  await page.route("**/notifications/unread-count", (route) =>
+  // Mocks scopés au chemin API (…/api/notifications). Regex plutôt que glob
+  // pour ne PAS intercepter les modules source Vite (/src/modules/notifications/…).
+  await page.route(/\/api\/notifications\/unread-count/, (route) =>
     route.fulfill({ json: { data: 1 } }),
   )
-  await page.route("**/notifications**", (route, request) => {
-    // Ne pas intercepter les sous-routes (mark-read, unread-count déjà routé).
-    if (request.method() !== "GET") return route.continue()
-    return route.fulfill({
+  // Forme exacte du bug : `data` est un objet, pas une string JSON.
+  await page.route(/\/api\/notifications(\?|$)/, (route) =>
+    route.fulfill({
       json: {
         data: [
           {
@@ -40,8 +40,8 @@ test("cliquer sur Notifications affiche le message sans crash React", async ({
           },
         ],
       },
-    })
-  })
+    }),
+  )
 
   // Échoue le test à la moindre erreur JS non catchée (le crash React en était une).
   const pageErrors: string[] = []

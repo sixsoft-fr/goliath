@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { notificationLabel } from "./NavNotifications"
+import { badgeCount, notificationLabel } from "./NavNotifications"
 import type { Notification } from "../notifications.type"
 
 const notification = (data: Notification["data"]): Notification => ({
@@ -28,5 +28,17 @@ describe("notificationLabel", () => {
 
   it("handles data already parsed as object", () => {
     expect(notificationLabel(notification({ title: "T", message: "M" }))).toBe("M")
+  })
+})
+
+describe("badgeCount", () => {
+  it("shows the number up to 9", () => {
+    expect(badgeCount(1)).toBe("1")
+    expect(badgeCount(9)).toBe("9")
+  })
+
+  it("caps at 9+ beyond 9", () => {
+    expect(badgeCount(10)).toBe("9+")
+    expect(badgeCount(42)).toBe("9+")
   })
 })

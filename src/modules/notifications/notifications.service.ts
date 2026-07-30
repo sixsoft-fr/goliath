@@ -24,5 +24,9 @@ export const readNotification = (
 export const readAllNotifications = (): Promise<Resource<Notification>> =>
   api.post("notifications/mark-all-read").json<Resource<Notification>>();
 
-export const getUnreadCount = (): Promise<Resource<number>> =>
-  api.get("notifications/unread-count").json<Resource<number>>();
+// L'API renvoie { count: number } (non-lues uniquement), pas un Resource.
+export const getUnreadCount = (): Promise<number> =>
+  api
+    .get("notifications/unread-count")
+    .json<{ count: number }>()
+    .then((r) => r.count);

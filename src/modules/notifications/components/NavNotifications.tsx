@@ -45,6 +45,10 @@ const safeParse = (s: string): unknown => {
   }
 }
 
+// ponytail: 9+ plafonne l'affichage, le badge reste étroit
+export const badgeCount = (count: number): string =>
+  count > 9 ? "9+" : String(count)
+
 export function NavNotifications() {
   const { isMobile } = useSidebar()
   const { user } = useAuth()
@@ -60,7 +64,7 @@ export function NavNotifications() {
     return null
   }
 
-  const count = unreadCount?.data ?? 0
+  const count = unreadCount ?? 0
   const items = notifications?.data ?? []
 
   return (
@@ -78,18 +82,12 @@ export function NavNotifications() {
             <span className="relative">
               <HugeiconsIcon icon={NotificationIcon} strokeWidth={2} />
               {count > 0 && (
-                <span
-                  aria-hidden
-                  className="absolute -top-0.5 -right-0.5 hidden size-2 rounded-full bg-destructive group-data-[collapsible=icon]:block"
-                />
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-white tabular-nums">
+                  {badgeCount(count)}
+                </span>
               )}
             </span>
             <span>{t("title")}</span>
-            {count > 0 && (
-              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-md bg-destructive px-1 text-xs font-medium text-white tabular-nums">
-                {count}
-              </span>
-            )}
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-80"

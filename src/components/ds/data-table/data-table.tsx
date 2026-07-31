@@ -1,9 +1,11 @@
 import { useTranslation } from "react-i18next"
 import {
   flexRender,
+  getCoreRowModel,
+  useReactTable,
   type Header,
-  type Table as TableInstance,
 } from "@tanstack/react-table"
+import type { PaginatedResponse } from "@/modules/core/service/paginated.types"
 import {
   DndContext,
   KeyboardSensor,
@@ -41,7 +43,14 @@ import { DataTableToolbar } from "./data-table-toolbar"
 import { DataTablePagination } from "./data-table-pagination"
 import type { DataTableInstance } from "./use-data-table"
 
-export type DataTableProps<T> = DataTableInstance<T> & {
+type Meta = PaginatedResponse<unknown>["meta"] | undefined
+
+export type DataTableProps<T> = {
+  instance: DataTableInstance<T>
+  /** Lignes de la page courante (fournies par l'appelant via react-query). */
+  data: T[]
+  /** Meta de pagination Laravel (last_page / total). */
+  meta?: Meta
   isLoading?: boolean
   isFetching?: boolean
   isError?: boolean
@@ -55,7 +64,7 @@ function SortableHeader<T>({
   header: Header<T, unknown>
   namespace: string
 }) {
-  const { t } = useTranslation(["core", namespace])
+  const { t } = useTranslation(namespace)
   const column = header.column
   const canReorder = column.columnDef.meta?.noReorder !== true
   const canSort = Boolean(column.columnDef.meta?.sortKey)
@@ -70,9 +79,13 @@ function SortableHeader<T>({
     opacity: isDragging ? 0.6 : 1,
   }
 
-  const label = column.columnDef.header
-    ? flexRender(column.columnDef.header, header.getContext())
-    : t(`fields.${column.id}`, { ns: namespace, defaultValue: column.id })
+  // Priorité à la traduction fields.<id> si elle existe ; sinon header custom ; sinon id.
+  const translated = t(`fields.${column.id}`, { defaultValue: "" })
+  const label =
+    translated ||
+    (column.columnDef.header
+      ? flexRender(column.columnDef.header, header.getContext())
+      : column.id)
 
   const sortIcon =
     sorted === "asc" ? ArrowUp01Icon : sorted === "desc" ? ArrowDown01Icon : UnfoldMoreIcon
@@ -95,6 +108,7 @@ function SortableHeader<T>({
           <button
             type="button"
             className="flex items-center gap-1 font-medium"
+            data-testid={`datatable-sort-${column.id}`}
             onClick={column.getToggleSortingHandler()}
           >
             {label}
@@ -113,19 +127,49 @@ function SortableHeader<T>({
  * (+ flags react-query) et rend toolbar / table (DnD reorder, tri, visibilité)
  * / pagination avec états loading / empty / error.
  */
-export function DataTable<T>(props: DataTableProps<T>) {
+export function DataTable<T>({
+  instance,
+  data,
+  meta,
+  isLoading,
+  isFetching,
+  isError,
+}: DataTableProps<T>) {
   const {
-    table,
     namespace,
+    columns,
     globalFilter,
     setGlobalFilter,
     columnOrder,
     setColumnOrder,
-    isLoading,
-    isFetching,
-    isError,
-  } = props
-  const { t } = useTranslation(["core", namespace])
+  } = instance
+  const { t } = useTranslation("core")
+
+  const table = useReactTable<T>({
+    data,
+    columns,
+    state: {
+      sorting: instance.sorting,
+      columnFilters: instance.columnFilters,
+      globalFilter: instance.globalFilter,
+      columnVisibility: instance.columnVisibility,
+      columnOrder: instance.columnOrder,
+      pagination: instance.pagination,
+    },
+    manualSorting: true,
+    manualFiltering: true,
+    manualPagination: true,
+    enableMultiSort: false, // mono-tri UI
+    pageCount: meta?.last_page ?? -1,
+    rowCount: meta?.total,
+    onSortingChange: instance.onSortingChange,
+    onColumnFiltersChange: instance.onColumnFiltersChange,
+    onGlobalFilterChange: instance.onGlobalFilterChange,
+    onColumnVisibilityChange: instance.setColumnVisibility,
+    onColumnOrderChange: instance.setColumnOrder,
+    onPaginationChange: instance.setPagination,
+    getCoreRowModel: getCoreRowModel(),
+  })
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -230,9 +274,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
         </DndContext>
       </div>
 
-      <DataTablePagination table={table} namespace={namespace} />
+      <DataTablePagination table={table} />
     </div>
   )
 }
-
-export type { TableInstance }

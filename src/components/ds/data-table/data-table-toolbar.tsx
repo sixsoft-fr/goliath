@@ -32,7 +32,8 @@ export function DataTableToolbar<T>({
   globalFilter,
   setGlobalFilter,
 }: ToolbarProps<T>) {
-  const { t } = useTranslation(["core", namespace])
+  const { t } = useTranslation("core")
+  const { t: tf } = useTranslation(namespace)
 
   const [search, setSearch] = useState(globalFilter)
   const debounced = useDebouncedValue(search, 250)
@@ -69,6 +70,7 @@ export function DataTableToolbar<T>({
         onChange={(e) => setSearch(e.target.value)}
         placeholder={t("table.search")}
         aria-label={t("table.search")}
+        data-testid="datatable-search"
         className="max-w-xs"
       />
 
@@ -116,7 +118,7 @@ export function DataTableToolbar<T>({
               onCheckedChange={(v) => c.toggleVisibility(Boolean(v))}
               onSelect={(e) => e.preventDefault()}
             >
-              {t(`fields.${c.id}`, { ns: namespace, defaultValue: c.id })}
+              {tf(`fields.${c.id}`, { defaultValue: c.id })}
             </DropdownMenuCheckboxItem>
           ))}
         </DropdownMenuContent>

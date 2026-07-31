@@ -59,7 +59,8 @@ function SelectFilter<T>({
   namespace,
   def,
 }: Ctx<T> & { def: Extract<ColumnFilterDef, { type: "select" }> }) {
-  const { t } = useTranslation(["core", namespace])
+  const { t } = useTranslation("core")
+  const { t: tf } = useTranslation(namespace)
   const multiple = def.multiple ?? true
   const current = column.getFilterValue()
   const selected: string[] = multiple
@@ -69,7 +70,7 @@ function SelectFilter<T>({
       : []
 
   const optionLabel = (v: string) =>
-    t(`values.${def.key}.${v}`, { ns: namespace, defaultValue: v })
+    tf(`values.${def.key}.${v}`, { defaultValue: v })
 
   const toggle = (v: string) => {
     if (multiple) {
@@ -210,11 +211,11 @@ export function DataTableFilter<T>({
   column: Column<T, unknown>
   namespace: string
 }) {
-  const { t } = useTranslation(["core", namespace])
+  const { t: tf } = useTranslation(namespace)
   const def = column.columnDef.meta?.filter
   if (!def) return null
 
-  const label = t(`fields.${column.id}`, { ns: namespace, defaultValue: column.id })
+  const label = tf(`fields.${column.id}`, { defaultValue: column.id })
   const ctx: Ctx<T> = { column, label, namespace }
 
   switch (def.type) {

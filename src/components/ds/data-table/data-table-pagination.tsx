@@ -13,14 +13,8 @@ import {
 
 const PAGE_SIZES = [10, 25, 50, 100]
 
-export function DataTablePagination<T>({
-  table,
-  namespace,
-}: {
-  table: Table<T>
-  namespace: string
-}) {
-  const { t } = useTranslation(["core", namespace])
+export function DataTablePagination<T>({ table }: { table: Table<T> }) {
+  const { t } = useTranslation("core")
   const { pageIndex, pageSize } = table.getState().pagination
   const pageCount = Math.max(table.getPageCount(), 1)
   const total = table.getRowCount()
@@ -68,6 +62,7 @@ export function DataTablePagination<T>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             aria-label={t("table.previous")}
+            data-testid="datatable-prev"
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
           </Button>
@@ -77,6 +72,7 @@ export function DataTablePagination<T>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             aria-label={t("table.next")}
+            data-testid="datatable-next"
           >
             <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
           </Button>

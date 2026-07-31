@@ -95,23 +95,26 @@ export function NavNotifications() {
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="flex items-center justify-between">
-              {t("title")}
-              {count > 0 && (
-                <button
-                  type="button"
-                  className="text-xs font-normal text-muted-foreground hover:text-foreground"
-                  onClick={() => markAllRead.mutate()}
-                >
-                  <HugeiconsIcon
-                    icon={TickDouble02Icon}
-                    strokeWidth={2}
-                    className="mr-1 inline size-3.5"
-                  />
-                  {t("markAllRead")}
-                </button>
-              )}
-            </DropdownMenuLabel>
+            {/* Base UI contract: GroupLabel (DropdownMenuLabel) doit vivre dans un Menu.Group */}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="flex items-center justify-between">
+                {t("title")}
+                {count > 0 && (
+                  <button
+                    type="button"
+                    className="text-xs font-normal text-muted-foreground hover:text-foreground"
+                    onClick={() => markAllRead.mutate()}
+                  >
+                    <HugeiconsIcon
+                      icon={TickDouble02Icon}
+                      strokeWidth={2}
+                      className="mr-1 inline size-3.5"
+                    />
+                    {t("markAllRead")}
+                  </button>
+                )}
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               {isError && (

@@ -3,6 +3,7 @@
 1. **Do not start developing a feature if the baseline is red.** Before writing any feature code, `vitest` (`npx vitest run`) and the e2e suite (`npx playwright test`) must both pass. If any test fails at the start, stop and fix or report it first — no feature work on a red baseline.
 2. **Every new feature must ship with tests** covering its new behaviors (unit via vitest and/or e2e via playwright, whichever fits). A feature is not complete until its behavior is covered.
 3. **All tests passing is an absolute success criterion for "done".** A task cannot be considered finished while any test fails. If a test fails, concisely explain the failure to the human and propose options to fix it — never silently move on or declare done.
+4. Please apply Dox Framework described in `DOX.md`
 
 ## Learned User Preferences
 

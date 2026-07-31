@@ -16,3 +16,10 @@
 - List/table filters are serialized as bracketed query params `f[key]=value` (not a single JSON `f` param).
 - TypeScript is configured with `erasableSyntaxOnly`; prefer `as const` objects plus derived types over TypeScript enums.
 - Hugeicons: import icon glyphs from `@hugeicons/core-free-icons` and use `HugeiconsIcon` from `@hugeicons/react`.
+
+## Child DOX Index
+
+Partiel — seul le sous-arbre de la feature DataTable est indexé. Le reste du projet reste à indexer.
+
+- `src/components/ds/data-table/AGENTS.md` — table générique server-driven (hook + composant, contrat colonne/query/i18n/persistance).
+- `src/modules/users/AGENTS.md` — câblage de référence de la DataTable sur la ressource users (`/app/users`).

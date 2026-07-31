@@ -1,0 +1,57 @@
+name: CI
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  unit:
+    name: Unit (vitest + types)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bunx tsc -b
+      - name: Vitest
+        run: bunx vitest run
+
+  e2e:
+    name: E2E (Playwright, mocked backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Backend hermétique : la fixture mock-api intercepte l'API + le WS Reverb.
+    # Les VITE_* sont requises car .env n'est pas versionné ; leurs valeurs
+    # importent peu (tous les appels sont mockés) mais VITE_API_URL doit exister
+    # (api.config lève sinon) et contenir /api (matché par les mocks).
+    env:
+      E2E_MOCK: "1"
+      VITE_API_URL: "http://laravel-api.test/api"
+      VITE_API_BASE_URL: "http://laravel-api.test"
+      VITE_REVERB_KEY: "test"
+      VITE_REVERB_HOST: "laravel-api.test"
+      VITE_REVERB_PORT: "8080"
+      VITE_REVERB_SCHEME: "http"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+      - name: Run Playwright tests
+        run: bunx playwright test --project=chromium
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30

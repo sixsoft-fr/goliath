@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// render() a besoin du DOM (env global = node).
 import { describe, it, expect, vi } from 'vitest'
 import { render } from '@testing-library/react'
 
@@ -5,7 +7,7 @@ const listen = vi.fn().mockReturnThis()
 const stopListening = vi.fn()
 const channel = { listen, stopListening }
 const privateFn = vi.fn(() => channel)
-vi.mock('@/providers/echo', () => ({
+vi.mock('@/lib/echo/echo.provider', () => ({
     useEcho: () => ({ private: privateFn }),
 }))
 

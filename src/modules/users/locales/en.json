@@ -1,0 +1,16 @@
+{
+  "title": "Users",
+  "fields": {
+    "name": "Name",
+    "email": "Email",
+    "status": "Status",
+    "created_at": "Created at"
+  },
+  "values": {
+    "status": {
+      "active": "Active",
+      "pending": "Pending",
+      "inactive": "Inactive"
+    }
+  }
+}

@@ -1,7 +1,9 @@
 # CI test baseline — vitest + e2e vraiment verts en CI
 
 **Date:** 2026-07-31
-**Statut:** plan, prêt à exécuter au prochain tour
+**Statut:** ✅ réalisé (branche `ci/test-baseline`) — D1=(a) mock réseau, D2=(a), D3=(a).
+Vérifié : e2e 4/4 hermétique (API injoignable `mock.invalid`) ET 4/4 local (vrai backend) ;
+vitest 36/36 ; `tsc -b` clean. Reste manuel : activer la protection de branche (jobs requis).
 **Contexte:** Suite à la standardisation bun (commit `6fabb4b`), le workflow `playwright.yml` installe désormais via bun. Mais deux trous restent :
 1. **vitest ne tourne pas en CI** (aucun job) — alors que les Règles absolues d'AGENTS.md exigent un baseline vert.
 2. **Les e2e ne peuvent pas s'exécuter en CI** : `playwright.config.ts` n'a pas de `webServer`, et les specs (`auth`, `notifications`) tapent le backend réel `laravel-api.test`, absent de GitHub Actions.

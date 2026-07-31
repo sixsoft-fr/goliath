@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test"
+import { test, expect } from "./fixtures/mock-api"
 
 // Régression : cliquer sur Notifications dans la sidebar crashait (écran blanc)
 // avec "Objects are not valid as a React child (found: object with keys

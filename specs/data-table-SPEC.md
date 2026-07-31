@@ -1,12 +1,12 @@
 # Phase: DataTable étendu — Specification
 
 **Created:** 2026-07-31
-**Ambiguity score:** 0.14 (gate: ≤ 0.20)
-**Requirements:** 11 locked
+**Ambiguity score:** 0.10 (gate: ≤ 0.20)
+**Requirements:** 12 locked
 
 ## Goal
 
-Livrer un composant générique et réutilisable `<DataTable>` (TanStack Table v8 en mode manuel/server-driven) qui filtre, trie, recherche, masque/affiche et réordonne ses colonnes, en mappant son état vers le contrat `TableQueries` existant (`f[key]=value`, `s=-updated_at`, `query=`, `page`/`per_page`), avec persistance de la vue en `localStorage`, câblé de bout en bout sur le module `users`.
+Livrer un hook headless `useDataTable` + un composant présentationnel `<DataTable>` (TanStack Table v8, mode manuel/server-driven) qui filtre, trie, recherche, masque/affiche et réordonne ses colonnes, en mappant son état vers le contrat spatie/laravel-query-builder existant (`f[key]=value`, `s=-updated_at`, `query=`, `page`/`per_page`), avec persistance de la vue en `localStorage` et i18n par contrat de namespace, câblé de bout en bout sur le module `users`.
 
 ## Background
 
@@ -14,151 +14,178 @@ Livrer un composant générique et réutilisable `<DataTable>` (TanStack Table v
 
 - `@tanstack/react-table` v8 est installé mais **utilisé nulle part**.
 - `src/components/ui/table.tsx` : primitives shadcn muettes (`<Table>`, `<TableRow>`, `<TableHead>`…). Aucun wrapper « data-table ».
-- Le backend utilise **spatie/laravel-query-builder**, avec les params renommés : `f` (= param `filter` de spatie) et `s` (= param `sort` de spatie). Chez spatie, **la virgule dénote un tableau** (`f[status]=active,pending` → `['active','pending']`), et **chaque filtre/tri doit être whitelisté** côté backend (`allowedFilters()` / `allowedSorts()`) — le front ne peut cibler que des clés autorisées.
-- Le contrat serveur existe déjà : `src/modules/core/service/`
+- Le backend utilise **spatie/laravel-query-builder**, params renommés : `f` (= `filter`) et `s` (= `sort`). **La virgule dénote un tableau** (`f[status]=active,pending` → `['active','pending']`) et **chaque filtre/tri doit être whitelisté** côté backend (`allowedFilters()` / `allowedSorts()`) — le front ne peut cibler que des clés autorisées.
+- Contrat serveur déjà en place : `src/modules/core/service/`
   - `TableQueries = { page, per_page, query, filters: Record<string, unknown>, sort }`
-  - `adaptFilters()` sérialise en `f[key]=value` (filtres spatie), `s=<sort>` (`-` = desc, multi séparés par `,`, défaut `-updated_at`), `query=`, `page`, `per_page` (défaut 10). `flattenFilters()` ne gère aujourd'hui que des scalaires — à étendre pour les tableaux (comma) et les ranges (opérateurs).
-  - `Service.list<T>(queries)` fait l'appel `ky` et retourne un `PaginatedResponse<T>` Laravel (`data[]` + `meta{current_page,last_page,per_page,total}` + `links`).
-- Primitives disponibles : Base UI + Radix + shadcn (`dropdown-menu`, `popover`, `select`, `checkbox`, `input`, `calendar`/`react-day-picker`).
-- `@tanstack/react-query`, `zustand`, `ky` installés. Aucune lib DnD installée.
-- Le module `src/modules/users` est **vide** — la table de référence implique de créer `UsersService`, la définition de colonnes et la page liste.
+  - `adaptFilters()` sérialise en `f[key]=value`, `s=<sort>` (`-` = desc, multi `,`, défaut `-updated_at`), `query=`, `page`, `per_page` (défaut 10). `flattenFilters()` ne gère que des scalaires — à étendre (tableaux + ranges).
+  - Retour : `PaginatedResponse<T>` Laravel (`data[]` + `meta{current_page,last_page,per_page,total}` + `links`).
+- **Pattern service canonique = fonctionnel**, pas la classe `Service` (legacy). Réf. `notifications.service.ts` : `listNotifications(tableQueries)` = `api.get(res, { searchParams: adaptFilters(q) }).json<PaginatedResponse<T>>()`. Et `notifications.queries.ts` : factory de clés + `useX(tableQueries)` (`queryKey: [res,'list',q]`, erreur loggée + rethrow).
+- Primitives dispo : Base UI + Radix + shadcn (`dropdown-menu`, `popover`, `select`, `checkbox`, `input`, `calendar`/`react-day-picker`). `zustand`, `ky`, `@tanstack/react-query` installés. **Aucune lib DnD.**
+- i18n : `react-i18next`, namespaces = modules (`useTranslation('<module>')` → `src/modules/<module>/locales/<lng>.json`, `defaultNS: "core"`). `core` locales vides aujourd'hui.
+- Routing : `<Routes>` JSX, zone protégée sous `app` + `AppLayout` + `RequireAuth`. → page users = `/app/users`.
+- E2E : mock hermétique via `page.route` quand `E2E_MOCK=1` (fixture `e2e/fixtures/mock-api.ts`), sinon vrai backend en local. Le backend `/api/users` existe déjà (whitelists spatie en place).
+- Le module `src/modules/users` est **vide** — à créer (service fonctionnel + colonnes + page + états).
 
-Le cœur (filtre/tri/recherche/visibilité) est fourni par TanStack Table ; le vrai travail est (a) le mapping état TanStack → `TableQueries` conforme spatie, (b) le drag-and-drop de réordonnancement, (c) la persistance `localStorage`, (d) l'extension de `flattenFilters` pour les tableaux (multi-select) et les ranges (opérateurs spatie), (e) l'alignement des clés `filterKey`/`sortKey` des colonnes sur les whitelists backend.
+Cœur (filtre/tri/recherche/visibilité) fourni par TanStack. Le vrai travail : (a) mapping état TanStack → `TableQueries` spatie, (b) DnD reorder, (c) persistance localStorage + réconciliation, (d) extension `flattenFilters` (tableaux + ranges opérateurs), (e) contrat i18n, (f) alignement `filterKey`/`sortKey` sur les whitelists.
+
+## Architecture (décisions de grilling)
+
+- **Séparation hook / présentation** : `useDataTable({ tableId, namespace, columns })` possède l'état (sorting, filters, columnOrder, columnVisibility, pagination) + la persistance localStorage + l'instance TanStack, et expose `{ table, queries }`. `<DataTable>` est **présentationnel** (rend `table` + états). **Le fetch reste chez l'appelant** : `const { table, queries } = useDataTable(...)` → `useUsers(queries)` → passe `data/meta` au composant. Découplé de ky/react-query, testable sans réseau.
+- **Mono-tri** dans l'UI (clic = remplace, cycle asc→desc→off), mapping serveur **multi-capable** conservé (aucun coût).
+- **Filtres live** : texte debounce 250 ms, contrôles discrets (select/booléen/date) immédiats, pas de bouton « Appliquer ». Tout changement de query **reset page à 1**.
+- **Anti-flash** : react-query `placeholderData: keepPreviousData` — anciennes lignes gardées pendant le fetch, `isFetching` discret (opacity/spinner). Skeleton plein **uniquement au 1er chargement** (`isLoading`).
 
 ## Requirements
 
-1. **Composant générique `<DataTable>`** : un seul composant piloté par une définition de colonnes, réutilisable sur tous les modules (users, pim, sales, wms).
-   - Current : aucun wrapper, seulement les primitives muettes de `table.tsx`
-   - Target : `<DataTable columns={...} query={...} data={...} meta={...} state / onStateChange ... />` en mode `manual*` TanStack (pas de filtre/tri/pagination côté client), contrôlé, sans logique métier
-   - Acceptance : le composant est monté avec deux définitions de colonnes différentes (users + un jeu mock) sans modification de son code source
+1. **Hook `useDataTable` + `<DataTable>` présentationnel** : générique, réutilisable (users, pim, sales, wms).
+   - Current : aucun wrapper, primitives muettes seulement
+   - Target : `useDataTable({ tableId, namespace, columns })` en mode `manual*` TanStack (pas de filtre/tri/pagination client) retourne `{ table, queries }` ; `<DataTable table ... />` rend. Aucune logique métier, aucun fetch interne.
+   - Acceptance : monté avec 2 définitions de colonnes différentes (users + jeu mock) sans modifier le source du hook/composant
 
-2. **Recherche globale** : une barre de recherche unique alimente le paramètre `query`.
+2. **Recherche globale** : une barre unique alimente `query`.
    - Current : aucun mécanisme de recherche
-   - Target : un champ de recherche debouncé (≥ 250 ms) met à jour `query` dans `TableQueries` ; vide → clé `query` absente de la requête (conforme `adaptFilters`)
-   - Acceptance : saisir « abc » émet `query=abc` ; vider le champ retire `query` de la query string
+   - Target : champ debouncé 250 ms met à jour `query` + reset page 1 ; vide → clé `query` absente (conforme `adaptFilters`)
+   - Acceptance : « abc » émet `query=abc&page=1` ; vider retire `query`
 
-3. **Filtres par colonne — texte / select (multi) / booléen** : filtres spatie.
-   - Current : aucun filtre ; `flattenFilters` ne gère que des scalaires
-   - Target : chaque colonne peut déclarer un filtre `text` (contains → `AllowedFilter::partial`), `select` ou `boolean`. Le `select` supporte **single et multi** : les valeurs sont jointes par virgule → tableau spatie (`f[status]=active,pending`). `flattenFilters` étendu pour sérialiser un tableau de valeurs en liste comma-separated.
-   - Acceptance : un filtre texte `name`=`jean` + un select multi `status`=`[active,pending]` produisent `f[name]=jean&f[status]=active,pending` ; test unitaire sur `adaptFilters` couvrant le cas tableau
+3. **Filtres par colonne — texte / select (multi) / booléen** : filtres spatie, application live.
+   - Current : aucun filtre ; `flattenFilters` scalaire
+   - Target : colonne déclare `text` (contains → `AllowedFilter::partial`), `select` (single **et** multi, valeurs jointes par virgule → tableau spatie) ou `boolean`. Texte debouncé 250 ms ; select/booléen immédiats ; tout changement reset page 1. `flattenFilters` étendu pour sérialiser un tableau en liste comma.
+   - Acceptance : texte `name=jean` + select multi `status=[active,pending]` → `f[name]=jean&f[status]=active,pending` ; test unitaire `adaptFilters` sur le cas tableau
 
-4. **Filtres date-range (opérateurs dynamiques spatie)** : plage de dates via comparateurs `>=` / `<=` embarqués dans la valeur.
-   - Current : aucune convention range ; `flattenFilters` scalaire uniquement
-   - Target : un filtre `dateRange` sur une colonne est mappé vers **une seule clé** portant deux bornes comma-séparées, opérateur embarqué : `f[<col>]=>=<from>,<=<to>` (spatie `AllowedFilter::operator(FilterOperator::DYNAMIC)` parse la virgule en tableau et ANDe les deux contraintes). Bornes optionnelles : seule `from` → `f[<col>]=>=<from>` ; seule `to` → `f[<col>]=<=<to>`. `adaptFilters` étendu pour sérialiser une valeur range `{gte?, lte?}` sous cette forme.
-   - Acceptance : une plage `created_at` du 2026-01-01 au 2026-01-31 produit exactement `f[created_at]=>=2026-01-01,<=2026-01-31` ; une borne seule produit une seule contrainte ; test unitaire sur `adaptFilters` couvrant les trois cas (deux bornes / from seule / to seule)
-   - Backend : nécessite `AllowedFilter::operator('<col>', FilterOperator::DYNAMIC)` whitelisté (voir Req. 11).
+4. **Filtres date-range (opérateurs dynamiques spatie)** : plage via `>=` / `<=` embarqués.
+   - Current : aucune convention range ; `flattenFilters` scalaire
+   - Target : un `dateRange` sur une colonne → **une seule clé**, bornes comma-séparées opérateur embarqué : `f[<col>]=>=<from>,<=<to>` (`AllowedFilter::operator(FilterOperator::DYNAMIC)`, virgule = AND). Bornes optionnelles (from seule / to seule). `adaptFilters` étendu pour `{gte?, lte?}`.
+   - Acceptance : 2026-01-01→2026-01-31 produit exactement `f[created_at]=>=2026-01-01,<=2026-01-31` ; borne seule → une contrainte ; test unitaire `adaptFilters` sur 3 cas
+   - Backend : `AllowedFilter::operator('<col>', FilterOperator::DYNAMIC)` whitelisté (déjà en place)
 
-5. **Tri multi-colonnes** : mapping état de tri TanStack → paramètre `s`.
+5. **Tri** : mono-tri UI, mapping `s` multi-capable.
    - Current : aucun tri
-   - Target : clic sur en-tête cycle asc → desc → off ; l'état `sorting` de TanStack est mappé en `s` (`-updated_at` pour desc, `updated_at` pour asc, multi joint par `,`) ; défaut `-updated_at` quand aucun tri
-   - Acceptance : trier par `name` asc puis `created_at` desc produit `s=name,-created_at`
+   - Target : clic en-tête cycle asc→desc→off et **remplace** le tri courant (mono) ; état `sorting` mappé en `s` (`-x` desc, `x` asc, code multi-capable via `adaptSort`) ; défaut `-updated_at`
+   - Acceptance : trier `name` asc → `s=name` ; puis `created_at` desc remplace → `s=-created_at` ; test unitaire du mapping (dont cas multi `name,-created_at`)
 
 6. **Visibilité des colonnes** : sélecteur masquer/afficher.
-   - Current : aucune gestion de visibilité
-   - Target : un menu (dropdown/popover) liste les colonnes masquables avec des cases à cocher ; l'état pilote `columnVisibility` de TanStack ; les colonnes marquées non-masquables restent toujours visibles
-   - Acceptance : décocher une colonne la retire du `<thead>` et de toutes les lignes ; la re-cocher la rétablit
+   - Current : aucune gestion
+   - Target : menu (dropdown/popover) de cases à cocher pilotant `columnVisibility` ; colonnes marquées non-masquables toujours visibles
+   - Acceptance : décocher retire la colonne de `<thead>` et des lignes ; re-cocher rétablit
 
-7. **Réordonnancement des colonnes (drag-and-drop)** : glisser les en-têtes via `@dnd-kit`.
-   - Current : aucun DnD ; aucune lib DnD installée
-   - Target : ajout de `@dnd-kit/core` + `@dnd-kit/sortable` ; glisser un en-tête réordonne visuellement les colonnes en pilotant `columnOrder` de TanStack ; les colonnes techniques (ex. futures actions) peuvent être exclues du DnD
-   - Acceptance : glisser la colonne C en position A réordonne le rendu ; l'ordre est reflété dans l'état `columnOrder`
+7. **Réordonnancement (drag-and-drop)** : glisser les en-têtes via `@dnd-kit`.
+   - Current : aucun DnD ; aucune lib installée
+   - Target : ajout `@dnd-kit/core` + `@dnd-kit/sortable` ; glisser un en-tête pilote `columnOrder` ; colonnes techniques exclues du DnD
+   - Acceptance : glisser C en position A réordonne le rendu ; reflété dans `columnOrder`
 
-8. **Pagination serveur** : contrôles page/per_page basés sur la meta Laravel.
+8. **Pagination serveur** : contrôles page/per_page sur la meta Laravel.
    - Current : aucune pagination
-   - Target : contrôles précédent/suivant + numéro de page + sélecteur `per_page`, pilotés par `meta.current_page` / `meta.last_page` / `meta.total` ; changement de page/taille met à jour `TableQueries`
-   - Acceptance : sur une réponse `meta{current_page:1,last_page:3}`, « suivant » émet `page=2` ; changer per_page à 25 émet `per_page=25&page=1`
+   - Target : précédent/suivant + n° de page + sélecteur `per_page`, pilotés par `meta.{current_page,last_page,total}`
+   - Acceptance : `meta{current_page:1,last_page:3}` → « suivant » émet `page=2` ; per_page à 25 émet `per_page=25&page=1`
 
-9. **Persistance de la vue en `localStorage`** : préférences mémorisées entre sessions, par table.
+9. **Persistance de la vue en `localStorage`** : par table, versionnée + réconciliée.
    - Current : aucune persistance
-   - Target : la vue (`columnOrder`, `columnVisibility`, filtres actifs, `sort`, `per_page`) est persistée en `localStorage` sous une clé dérivée d'une prop obligatoire `tableId` ; rechargée au montage
-   - Acceptance : réordonner/masquer une colonne + appliquer un filtre, recharger la page → l'ordre, la visibilité et le filtre sont restaurés ; deux `tableId` distincts n'écrasent pas leurs préférences
+   - Target : clé `datatable:v1:{tableId}` persiste `columnOrder`, `columnVisibility`, `per_page`, filtres actifs, `sort`. **NON persisté** : `query` (recherche volatile) et `page` (repart à 1). Au montage : réconciliation — intersecter l'ordre stocké avec les ids actuels (drop inconnus), append les nouvelles colonnes, drop les filtres dont le `filterKey` a disparu. Bump de version invalide tout le stock.
+   - Acceptance : réordonner/masquer + filtrer, recharger → ordre/visibilité/filtres restaurés, `query` non restaurée, page = 1 ; 2 `tableId` isolés ; une colonne retirée du code ne casse pas la restauration
 
 10. **Câblage de référence sur `users` + états** : implémentation de bout en bout.
-    - Current : `src/modules/users` est vide
-    - Target : `UsersService` (extends `Service`, resource `"users"`), une définition de colonnes users, et une page liste utilisant `<DataTable>` via `@tanstack/react-query` + `Service.list` ; états loading (skeleton), empty (composant `empty`) et error rendus
-    - Acceptance : la page users charge une liste paginée, filtrable, triable, avec colonnes masquables/réordonnables ; les états 0 ligne, 1 ligne et N lignes s'affichent sans erreur
+    - Current : `src/modules/users` vide
+    - Target : `users.service.ts` (`listUsers(queries)` fonctionnel + `adaptFilters`), `users.queries.ts` (`useUsers` façon `useNotifications`), type `User`, définition de colonnes, page `/app/users` (sous `app`/`AppLayout`) branchant `useDataTable` + `useUsers`. États : skeleton (1er chargement), `isFetching` discret ensuite (keepPreviousData), empty (composant `empty`), error.
+    - Acceptance : la page charge une liste paginée/filtrable/triable, colonnes masquables/réordonnables ; états 0 / 1 / N lignes + error sans erreur ; pas de flash au changement de filtre/page
 
-11. **Contrat de définition de colonnes + alignement whitelist spatie** : chaque colonne déclare ses clés serveur.
-    - Current : aucune définition de colonnes ; aucun lien front↔whitelist backend
-    - Target : la définition de colonne porte un `filterKey` (et `sortKey`) explicite ; seules les colonnes avec `filterKey` affichent un contrôle de filtre, seules celles avec `sortKey` sont triables ; ces clés doivent correspondre aux `allowedFilters()` / `allowedSorts()` du backend spatie
-    - Acceptance : une colonne sans `sortKey` n'expose pas de tri ; une colonne sans `filterKey` n'expose pas de filtre ; la table users ne cible que des clés whitelistées côté backend (aucun 400 spatie sur filtre/tri non autorisé)
+11. **Contrat de définition de colonnes + alignement whitelist spatie** : via `ColumnDef.meta`.
+    - Current : aucune définition ; aucun lien front↔whitelist
+    - Target : module augmentation de `ColumnMeta` (TanStack) portant `sortKey?`, `filter?: { key, type: 'text'|'select'|'boolean'|'dateRange', options? }`. **Clés explicites** : pas de tri/filtre tant que `meta` ne le déclare pas (zéro clé involontaire). Types via unions `as const` (pas d'enum — `erasableSyntaxOnly`). Les clés doivent matcher `allowedFilters()`/`allowedSorts()`.
+    - Acceptance : colonne sans `sortKey` → pas de tri ; sans `filter` → pas de contrôle de filtre ; la table users n'envoie que des clés whitelistées (aucun 400 spatie)
+
+12. **Contrat i18n par namespace** : chrome partagé + vocabulaire ressource.
+    - Current : `core` locales vides ; aucun texte de table
+    - Target : `useDataTable` reçoit un `namespace` (ex. `"users"`). **Chrome générique** (recherche, « Aucun résultat », « Lignes par page », « Page X/Y », menu colonnes, « Effacer les filtres ») → namespace `core`, clés `table.*`. **Noms de colonnes** → `t('fields.<columnId>', { ns: namespace })`. **Options de select (enums)** → `t('values.<field>.<value>', { ns: namespace })`. Aucun texte en dur dans le composant ; l'appelant ne fournit que les valeurs.
+    - Acceptance : header users résolu depuis `users:fields.*` ; option `status` résolue depuis `users:values.status.*` ; chrome depuis `core:table.*` ; `fr` livré ; changer de langue met à jour les libellés
 
 ## Boundaries
 
 **In scope:**
-- Composant générique `<DataTable>` server-driven (mode manuel TanStack v8)
-- Recherche globale (`query`)
-- Filtres par colonne : texte, select/enum, booléen, date-range
-- Tri multi-colonnes (mapping `s`)
-- Visibilité des colonnes (sélecteur)
-- Réordonnancement par drag-and-drop des en-têtes (`@dnd-kit`)
-- Pagination serveur (page/per_page, meta Laravel)
-- Persistance `localStorage` de la vue, par `tableId`
-- Extension de `flattenFilters`/`adaptFilters` pour les tableaux (comma, multi-select) et les ranges (opérateurs spatie)
-- Contrat de colonne avec `filterKey`/`sortKey` alignés sur les whitelists spatie (`allowedFilters`/`allowedSorts`)
-- Câblage de référence sur le module `users` (service + colonnes + page + états)
-- Tests : unitaires (vitest) pour le mapping état→`TableQueries` et `adaptFilters` ; e2e (playwright) pour le parcours users
+- Hook `useDataTable` + `<DataTable>` présentationnel, server-driven (TanStack v8 manuel)
+- Recherche globale (`query`), filtres colonne (texte/select multi/booléen/date-range), tri mono-UI
+- Visibilité colonnes, reorder DnD (`@dnd-kit`), pagination serveur
+- Persistance `localStorage` versionnée + réconciliée par `tableId`
+- Extension `flattenFilters`/`adaptFilters` (tableaux comma + ranges opérateurs)
+- Contrat colonne via `ColumnDef.meta` (clés explicites, alignées whitelist spatie)
+- Contrat i18n (`core:table.*`, `<ns>:fields.*`, `<ns>:values.*`)
+- Câblage users (service fonctionnel + queries + type + colonnes + page `/app/users` + états)
+- Tests : vitest (mapping `adaptFilters`/`flattenFilters`/tri, réconciliation localStorage) ; e2e playwright (parcours users, mock hermétique)
 
 **Out of scope:**
-- Sélection de lignes / actions groupées (bulk) — non demandé, phase ultérieure
+- Sélection de lignes / actions groupées (bulk) — non demandé
 - Édition inline des cellules — non demandé
 - Redimensionnement des colonnes (resize) — non demandé (seul le reorder l'est)
 - Export CSV/Excel — non demandé
-- Virtualisation des lignes — non nécessaire au volume paginé (per_page)
-- Pagination cursor/infinie — le contrat existant est page-based
-- Synchronisation serveur des préférences (par user) — `localStorage` a été choisi ; pas d'endpoint de préférences
+- Multi-tri dans l'UI (shift-clic) — mapping conservé multi-capable, mais UI mono ; activable plus tard sans changer le contrat
+- Virtualisation des lignes — inutile au volume paginé
+- Pagination cursor/infinie — contrat page-based
+- Synchronisation serveur des préférences (par user) — `localStorage` choisi
 - Vues sauvegardées / presets nommés — non demandé
-- Synchronisation de l'état filtres/tri dans l'URL — `localStorage` couvre la persistance
+- Synchronisation filtres/tri dans l'URL — `localStorage` couvre la persistance
+- Bouton « Appliquer » les filtres — filtres live retenus
 
 ## Constraints
 
-- **Dépendances :** ajout de `@dnd-kit/core` + `@dnd-kit/sortable` (aucune autre lib nouvelle ; le reste du besoin est couvert par TanStack Table + primitives déjà installées).
-- **Contrat API (spatie/laravel-query-builder) :** filtres via le param `f` (= `filter` renommé), `f[key]=value` bracketé (jamais un unique param JSON) ; tri via `s` (= `sort` renommé, `-` = desc, multi séparés par `,`) ; **virgule = tableau** (`f[status]=active,pending`) ; conforme à `adaptFilters` existant.
-- **Whitelist spatie :** chaque `filterKey`/`sortKey` envoyé doit être déclaré côté backend (`allowedFilters()` / `allowedSorts()`), sinon spatie renvoie une erreur. Les définitions de colonnes front doivent rester alignées sur ces listes.
-- **Range = opérateurs dynamiques spatie :** date-range sérialisé en `f[<col>]=>=<from>,<=<to>` (opérateur embarqué, virgule = AND) ; backend `AllowedFilter::operator(FilterOperator::DYNAMIC)`.
-- **TypeScript :** `erasableSyntaxOnly` activé → pas d'`enum`, utiliser des objets `as const` + types dérivés.
-- **UI :** primitives shadcn/Base UI/Radix existantes + util `cn` ; icônes via `@hugeicons/react` + `@hugeicons/core-free-icons`.
-- **Baseline & tests (AGENTS.md, non négociable) :** ne pas démarrer sur baseline rouge (`vitest` + `playwright` verts d'abord) ; toute nouvelle behavior livrée avec tests ; « done » ⇔ tous les tests passent.
+- **Dépendances :** ajout de `@dnd-kit/core` + `@dnd-kit/sortable` uniquement.
+- **Contrat API (spatie) :** `f` (= `filter`), `f[key]=value` bracketé ; `s` (= `sort`, `-` = desc, multi `,`) ; **virgule = tableau** ; conforme à `adaptFilters`.
+- **Whitelist spatie :** chaque `filterKey`/`sortKey` doit être dans `allowedFilters()`/`allowedSorts()` ; colonnes front alignées.
+- **Range = opérateurs dynamiques spatie :** `f[<col>]=>=<from>,<=<to>` (`FilterOperator::DYNAMIC`).
+- **Service = fonctionnel** (`listUsers` + `adaptFilters`), pas la classe `Service` (legacy). react-query façon `notifications.queries.ts`.
+- **i18n :** namespaces = modules ; contrat `core:table.*` / `<ns>:fields.*` / `<ns>:values.*`.
+- **TypeScript :** `erasableSyntaxOnly` → pas d'`enum`, unions `as const` + types dérivés.
+- **UI :** primitives shadcn/Base UI/Radix + `cn` ; icônes `@hugeicons/react` + `@hugeicons/core-free-icons`.
+- **Baseline & tests (AGENTS.md, non négociable) :** baseline verte avant feature (`vitest` + `playwright`) ; toute behavior livrée avec tests ; « done » ⇔ tous les tests passent.
 
 ## Acceptance Criteria
 
-- [ ] `<DataTable>` se monte avec ≥ 2 définitions de colonnes différentes sans modifier son source
-- [ ] La recherche globale émet `query=<valeur>` et l'omet quand vide
-- [ ] Des filtres texte + select + booléen actifs produisent `f[key]=value` combinés
-- [ ] Un select multi produit `f[status]=active,pending` (test unitaire `adaptFilters` sur tableau)
-- [ ] Un filtre date-range produit `f[created_at]=>=2026-01-01,<=2026-01-31` ; borne seule → une contrainte (test unitaire `adaptFilters`, 3 cas)
-- [ ] Une colonne sans `sortKey`/`filterKey` n'expose pas de tri/filtre ; aucune clé non-whitelistée envoyée par la table users
-- [ ] Le tri multi produit `s=name,-created_at` (mapping vérifié par test unitaire)
-- [ ] Masquer une colonne la retire de `<thead>` et des lignes ; la ré-afficher la rétablit
+- [ ] `useDataTable`/`<DataTable>` montés avec ≥ 2 définitions de colonnes sans modifier leur source
+- [ ] Recherche globale émet `query=<v>&page=1` et l'omet quand vide (non persistée au reload)
+- [ ] Filtres texte + select multi + booléen → `f[name]=jean&f[status]=active,pending` (test `adaptFilters` tableau)
+- [ ] Date-range → `f[created_at]=>=2026-01-01,<=2026-01-31` ; borne seule → une contrainte (test `adaptFilters`, 3 cas)
+- [ ] Tout changement de filtre/tri/recherche reset la page à 1
+- [ ] Colonne sans `sortKey`/`filter` n'expose pas tri/filtre ; aucune clé non-whitelistée envoyée (users)
+- [ ] Tri mono : clic remplace le tri ; mapping `s` vérifié en unitaire (dont cas multi `name,-created_at`)
+- [ ] Masquer une colonne la retire de `<thead>`/lignes ; ré-afficher rétablit
 - [ ] Glisser un en-tête réordonne le rendu et met à jour `columnOrder`
-- [ ] Pagination : « suivant » émet `page=2` ; changer per_page émet `per_page=N&page=1`
-- [ ] Recharger la page restaure ordre + visibilité + filtres depuis `localStorage`, isolés par `tableId`
-- [ ] La page users rend loading / empty / error / N lignes sans erreur
+- [ ] Pagination : « suivant » → `page=2` ; per_page → `per_page=N&page=1`
+- [ ] Reload restaure ordre/visibilité/filtres/sort/per_page depuis `localStorage` (clé `datatable:v1:{tableId}`), `query`/page exclus, isolés par `tableId`, réconciliation OK si une colonne disparaît
+- [ ] Pas de flash au changement de filtre/page (keepPreviousData) ; skeleton au 1er chargement seulement
+- [ ] i18n : headers via `<ns>:fields.*`, options select via `<ns>:values.*`, chrome via `core:table.*`, `fr` livré
+- [ ] Page users rend loading / empty / error / N lignes sans erreur
 - [ ] `vitest` et `playwright` verts
 
 ## Ambiguity Report
 
 | Dimension          | Score | Min  | Status | Notes                                                        |
 |--------------------|-------|------|--------|--------------------------------------------------------------|
-| Goal Clarity       | 0.90  | 0.75 | ✓      | Composant server-driven mappé sur contrat existant           |
-| Boundary Clarity   | 0.85  | 0.70 | ✓      | In/out explicites (resize, bulk, export, cursor exclus)      |
-| Constraint Clarity | 0.88  | 0.65 | ✓      | spatie (f/s renommés, comma=array, whitelist) ; @dnd-kit ; range opérateur dynamique figé (Req. 4) |
-| Acceptance Criteria| 0.80  | 0.70 | ✓      | 13 critères pass/fail                                        |
-| **Ambiguity**      | 0.14  | ≤0.20| ✓      |                                                              |
+| Goal Clarity       | 0.92  | 0.75 | ✓      | Hook+composant server-driven, contrat existant, users concret |
+| Boundary Clarity   | 0.90  | 0.70 | ✓      | In/out explicites (resize, bulk, export, multi-tri UI, URL exclus) |
+| Constraint Clarity | 0.90  | 0.65 | ✓      | spatie figé, service fonctionnel, i18n contrat, @dnd-kit      |
+| Acceptance Criteria| 0.85  | 0.70 | ✓      | 15 critères pass/fail                                        |
+| **Ambiguity**      | 0.10  | ≤0.20| ✓      |                                                              |
 
-Status : ✓ = minimum atteint. Toutes les dimensions au-dessus du minimum, aucune assumption ouverte.
+Status : ✓ = minimum atteint. Aucune assumption ouverte (backend users existant confirmé).
 
 ## Interview Log
 
 | Round | Perspective              | Question summary                          | Decision locked                                              |
 |-------|--------------------------|-------------------------------------------|--------------------------------------------------------------|
-| 0     | Researcher (scout)       | Qu'existe-t-il aujourd'hui ?              | TanStack installé/inutilisé ; contrat `Service.list` + `adaptFilters` déjà là ; users vide |
-| 1     | Researcher / Simplifier  | Source données ? persistance ? portée ?   | Server-side (API) ; localStorage ; composant générique       |
-| 2     | Boundary / Constraint    | Reorder ? types de filtres ? ressource ?  | @dnd-kit (drag en-têtes) ; texte+select+bool+date-range ; users |
-| 3     | Constraint (spatie)      | Forme range ? select multi ?              | Range via opérateurs spatie (`>=`/`<=`) ; select multi+single (comma). Contrainte whitelist `allowedFilters`/`allowedSorts` ajoutée |
+| 0     | Researcher (scout)       | Qu'existe-t-il aujourd'hui ?              | TanStack installé/inutilisé ; contrat `adaptFilters` là ; users vide |
+| 1     | Researcher / Simplifier  | Source ? persistance ? portée ?           | Server-side ; localStorage ; composant générique             |
+| 2     | Boundary / Constraint    | Reorder ? filtres ? ressource ?           | @dnd-kit ; texte+select+bool+date-range ; users              |
+| 3     | Constraint (spatie)      | Forme range ? select multi ?              | Opérateurs spatie ; select multi+single ; whitelist ajoutée  |
+| 4 (grill) | Architecture          | Où vit l'état / le fetch ?                | Hook `useDataTable` + `<DataTable>` présentationnel ; fetch appelant |
+| 5 (grill) | Contrat colonne       | Comment déclarer sort/filter ?            | `ColumnDef.meta` augmenté ; clés explicites (zéro implicite)  |
+| 6 (grill) | Persistance           | Quoi persister ? réconciliation ?         | Tout sauf `query`/`page` ; clé `v1:{tableId}` ; réconciliation |
+| 7 (grill) | Tri                   | Mono ou multi UI ?                        | Mono-UI, mapping multi-capable                               |
+| 8 (grill) | Fetch UX              | Anti-flash ?                              | keepPreviousData + skeleton 1er chargement                   |
+| 9 (grill) | Timing filtres        | Live ou bouton Appliquer ?                | Live (texte debounce 250 ms, discrets immédiats) + reset page 1 |
+| 10 (grill)| i18n                  | Structure des libellés ?                  | `core:table.*` / `<ns>:fields.*` / `<ns>:values.*` ; `namespace` en prop |
+| 11 (grill)| Users concret         | Colonnes ? backend existe ?               | name/email/status/created_at ; backend `/api/users` existant |
 
 ---
 
 *Feature: data-table étendu*
 *Spec created: 2026-07-31*
-*Next step: implémentation — ce projet n'a pas de roadmap `.planning/` ; ce SPEC tient lieu de contrat de requirements. Voir DOX.md + AGENTS.md pour les conventions d'exécution et de tests.*
+*Grilled: 2026-07-31 (8 branches, ambiguïté 0.14 → 0.10)*
+*Next step: implémentation — pas de roadmap `.planning/` ; ce SPEC tient lieu de contrat. Voir DOX.md + AGENTS.md pour l'exécution et les tests.*

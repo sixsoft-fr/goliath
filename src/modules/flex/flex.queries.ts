@@ -9,22 +9,22 @@ import {
 
 // Dé-wrappe le KyResponse en PaginatedResponse pour la DataTable (data + meta).
 // keepPreviousData : anti-flash au changement de filtre/tri/page.
-export const useFlexList = (
+export const useFlexList = <T>(
   resource: string,
   query: TableQueries,
-): UseQueryResult<PaginatedResponse<unknown>, Error> => {
+): UseQueryResult<PaginatedResponse<T>, Error> => {
   const service = new FlexService(resource);
   return useQuery({
     queryKey: [resource, "list", query],
-    queryFn: () => service.list<unknown>(query).then((r) => r.json()),
+    queryFn: () => service.list<T>(query).then((r) => r.json()),
     placeholderData: keepPreviousData,
   })
 }
 
-export const useFlex = (resource: string, id: string | number): UseQueryResult<KyResponse<unknown>, Error> => {
+export const useFlex = <T>(resource: string, id: string | number): UseQueryResult<KyResponse<T>, Error> => {
   const service = new FlexService(resource);
   return useQuery({
     queryKey: [resource, id],
-    queryFn: () => service.setIdentifier(id).get<unknown>(),
+    queryFn: () => service.setIdentifier(id).get<T>(),
   })
 }

@@ -357,7 +357,7 @@ function resolveSettings<TData>(
 
 const warned = new Set<string>()
 function warnOnce(key: string, message: string) {
-  if (process.env.NODE_ENV !== "production" && !warned.has(key)) {
+  if (import.meta.env.DEV && !warned.has(key)) {
     warned.add(key)
     console.warn(`[event-calendar] ${message}`)
   }

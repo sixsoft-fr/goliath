@@ -20,6 +20,8 @@ utilisateurs à `/app/users`. Sert de patron pour les futures tables de ressourc
 - **Colonnes** : clés serveur dans `ColumnDef.meta`. Aucun `header` → la
   DataTable résout `users:fields.<id>`. Câblées : `name`/`email` (texte + tri),
   `status` (select multi), `created_at` (dateRange + tri).
+- **Dates** : formatées via `@/lib/date` `formatDateTime(value, i18n.language)`
+  (`Intl`, dépendant de la langue) ; le binding i18n se fait dans un `DateCell`.
 - **i18n** : `users:fields.*` (colonnes), `users:values.status.*` (enum),
   `users:title`.
 - **Backend** : `name`/`email`/`status`/`created_at` doivent être whitelistés en

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
-import { format } from "date-fns"
 import type { ColumnDef } from "@tanstack/react-table"
+import { formatDateTime } from "@/lib/date"
 import type { User } from "./users.types"
 
 // User (auth) ne porte pas de `status` ; colonne démo via accessor élargi.
@@ -18,10 +18,10 @@ function StatusCell({ value }: { value?: string }) {
   return <span>{t(`values.status.${value}`, { defaultValue: value })}</span>
 }
 
-function formatDate(value: unknown): string {
-  if (!value) return "—"
-  const d = new Date(value as string)
-  return Number.isNaN(d.getTime()) ? "—" : format(d, "dd/MM/yyyy HH:mm")
+// Formate selon la langue i18n courante (réactif au changement de langue).
+function DateCell({ value }: { value: unknown }) {
+  const { i18n } = useTranslation("users")
+  return <span>{formatDateTime(value, i18n.language)}</span>
 }
 
 /**
@@ -52,7 +52,7 @@ export const usersColumns: ColumnDef<User>[] = [
   {
     id: "created_at",
     accessorKey: "created_at",
-    cell: ({ getValue }) => formatDate(getValue()),
+    cell: ({ getValue }) => <DateCell value={getValue()} />,
     meta: { sortKey: "created_at", filter: { key: "created_at", type: "dateRange" } },
   },
 ]

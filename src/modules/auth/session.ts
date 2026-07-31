@@ -1,18 +1,17 @@
-import { api, refreshAccessToken } from "@/lib/api"
-import { setAccessToken } from "./token-store"
+import { api } from "@/lib/api"
+import { getAccessToken, setAccessToken } from "./token-store"
 import type { AuthSession, User } from "./types"
 
-// Restauration de session au démarrage, via le cookie refresh httpOnly.
-// POST /auth/refresh ne renvoie que { accessToken } ; on récupère l'utilisateur
-// courant via GET /auth/me (authentifié par le Bearer fraîchement rafraîchi),
-// qui renvoie { user }.
-// Pas de cookie / refresh expiré / user introuvable → null (= non connecté).
+// Restauration de session au démarrage à partir du token persisté (localStorage).
+// On le valide via GET /auth (endpoint utilisateur courant côté API) ; s'il est
+// absent ou expiré (401), null = non connecté. Le refresh via cookie n'est pas
+// tenté ici : inopérant en cross-site HTTP (cf. token-store.ts).
 export async function attemptSilentRefresh(): Promise<AuthSession | null> {
-  const accessToken = await refreshAccessToken()
+  const accessToken = getAccessToken()
   if (!accessToken) return null
 
   try {
-    const { user } = await api.get("auth/me").json<{ user: User }>()
+    const { user } = await api.get("auth").json<{ user: User }>()
     return { user, accessToken }
   } catch {
     setAccessToken(null)

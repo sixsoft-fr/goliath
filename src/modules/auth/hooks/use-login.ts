@@ -9,8 +9,14 @@ export function useLogin() {
   const navigate = useNavigate()
 
   return useMutation({
-    mutationFn: (payload: LoginPayload) =>
-      api.post("auth", { json: payload }).json<AuthSession>(),
+    // Le endpoint POST /auth renvoie { token, user } ; on le mappe vers la forme
+    // interne AuthSession ({ accessToken, user }) utilisée par login() et le refresh.
+    mutationFn: async (payload: LoginPayload): Promise<AuthSession> => {
+      const { token, user } = await api
+        .post("auth", { json: payload })
+        .json<{ token: string; user: AuthSession["user"] }>()
+      return { accessToken: token, user }
+    },
     onSuccess: (session) => {
       login(session)
       navigate("/app")

@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// createEcho accède à window (laravel-echo/pusher) : ce test a besoin du DOM.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const echoCtor = vi.fn()

@@ -1,0 +1,7 @@
+{
+  "title": "Notifications",
+  "markAllRead": "Mark all as read",
+  "empty": "No notifications",
+  "loading": "Loading…",
+  "error": "Could not load notifications"
+}

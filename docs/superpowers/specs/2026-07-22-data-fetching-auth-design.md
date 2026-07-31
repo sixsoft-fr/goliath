@@ -1,7 +1,15 @@
 # Design — Couche data-fetching (ky + react-query) & auth JWT
 
 **Date:** 2026-07-22
-**Statut:** approuvé, prêt pour plan d'implémentation
+**Statut:** implémenté — voir corrections 2026-07-30 ci-dessous
+
+> ⚠️ **Corrections post-implémentation (2026-07-30) — font autorité sur tout ce qui suit.**
+> Confrontés à l'API réelle et au déploiement cross-site HTTP (front `localhost` ↔ API `laravel-api.test`), plusieurs choix ont changé :
+> - **Stockage access token → `localStorage`** (plus « en mémoire seule ») : le refresh via cookie httpOnly est inopérant en cross-site HTTP (cookie de session `SameSite=Lax` non renvoyé). Contrepartie XSS assumée ; fix propre côté API (cookie `SameSite=None`+HTTPS ou même site).
+> - **Endpoint login = `POST /auth`** renvoyant **`{ token, user }`** (clé `token`) → mappé vers `AuthSession { accessToken, user }`.
+> - **Utilisateur courant / restauration de session = `GET /auth`** (la route `/auth/me` n'existe pas).
+> - **Restauration au reload** : depuis le token `localStorage`, validé par `GET /auth`. Pas d'appel `/auth/refresh`.
+> - La ligne « Persistance du token au reload » en *Hors périmètre* est **caduque** : c'est implémenté.
 
 ## Contexte
 
@@ -14,9 +22,11 @@ Backend existant, base URL via `VITE_API_URL`.
 
 | Sujet | Décision |
 |---|---|
-| Auth | Bearer JWT |
-| Stockage access token | En mémoire (React context) |
-| Refresh token | Cookie httpOnly posé par le serveur |
+| Auth | Bearer token (Sanctum) |
+| Stockage access token | **`localStorage`** (survit au reload) ⟵ corrigé 2026-07-30 |
+| Refresh token | Cookie httpOnly — **inopérant en cross-site HTTP**, non utilisé ⟵ corrigé |
+| Endpoint login | **`POST /auth`** → `{ token, user }` ⟵ corrigé |
+| Endpoint utilisateur courant | **`GET /auth`** (pas `/auth/me`) ⟵ corrigé |
 | Endpoint `/auth/refresh` | Incertain → **seam d'extension** (logout par défaut) |
 | Retry | Piloté par react-query (`ky retry: 0`) |
 | Périmètre | Infra + login câblé |
@@ -24,12 +34,13 @@ Backend existant, base URL via `VITE_API_URL`.
 
 ## Décision d'architecture : pont token ↔ ky
 
-L'access token vit en mémoire dans un React context (pour la réactivité de `isAuthenticated`).
+L'access token est exposé de façon réactive par un React context (pour `isAuthenticated`),
+mais **persisté en `localStorage`** (corrigé 2026-07-30) pour survivre au reload.
 ky étant un module non-React, il ne peut pas lire un context.
 
-**Retenu :** un module `token-store.ts` (`let accessToken` + `get/set`). Le context React
-appelle `set`, le hook `beforeRequest` de ky appelle `get`. ky reste découplé de React et
-testable isolément.
+**Retenu :** un module `token-store.ts` (`accessToken` adossé à `localStorage` + `get/set`). Le
+context React appelle `set`, le hook `beforeRequest` de ky appelle `get`. ky reste découplé de
+React et testable isolément.
 
 **Rejeté :** passer le token à chaque appel — verbeux, annule l'intérêt des hooks ky.
 
@@ -51,10 +62,11 @@ Import direct (`@/lib/api`, `@/lib/query`) — pas de barrel, cohérent avec `li
 - **`token-store.ts`** — `getAccessToken()` / `setAccessToken(token | null)` en mémoire.
 - **`auth.context.tsx`** — `<AuthProvider>` : état `user` / `isAuthenticated`, expose
   `login(user, token)` / `logout()`, synchronise le token vers `token-store`.
-- **`hooks/use-login.ts`** — `useMutation` → `POST /auth/login` → `login()` + redirect `/app`.
-- **`hooks/use-session.ts`** — bootstrap démarrage : tente un refresh silencieux. **Seam :**
-  stub renvoyant « non connecté » par défaut ; activable en une fonction quand `/auth/refresh`
-  est confirmé.
+- **`hooks/use-login.ts`** — `useMutation` → `POST /auth` renvoyant `{ token, user }`, mappé vers
+  `AuthSession { accessToken, user }`, puis `login(session)` + redirect `/app`.
+- **`session.ts`** — bootstrap démarrage (`attemptSilentRefresh`) : restaure depuis le token
+  `localStorage` et le valide via `GET /auth` ; échec/absence → « non connecté ». Ne tente pas
+  `/auth/refresh` (inopérant cross-site HTTP).
 - **`require-auth.tsx`** — garde de route : `isAuthenticated` sinon `<Navigate to="/login" />`.
 
 ## Flux 401 (seam d'extension)
@@ -87,4 +99,5 @@ Un test Vitest sur la logique non-triviale du client `api.ts`, avec `fetch` mock
 - Interceptors/retry custom au-delà du défaut react-query.
 - Refresh token effectif (tant que l'endpoint n'est pas confirmé — le seam est prêt).
 - Login GitHub/OAuth (le bouton reste décoratif pour l'instant).
-- Persistance du token au reload autre que via le refresh cookie.
+- ~~Persistance du token au reload~~ → **implémenté** via `localStorage` (corrigé 2026-07-30 ;
+  le refresh cookie n'étant pas fonctionnel en cross-site HTTP).

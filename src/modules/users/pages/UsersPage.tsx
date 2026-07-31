@@ -3,9 +3,11 @@ import { DataTable, useDataTable } from "@/components/ds/data-table"
 import type { User } from "../users.types"
 import { useUsers } from "../users.queries"
 import { usersColumns } from "../users.columns"
+import { useNavigate } from "react-router"
 
 export default function UsersPage() {
   const { t } = useTranslation("users")
+  const navigate = useNavigate()
   const dt = useDataTable<User>({
     tableId: "users",
     namespace: "users",
@@ -23,6 +25,9 @@ export default function UsersPage() {
         isLoading={query.isLoading}
         isFetching={query.isFetching}
         isError={query.isError}
+        onRowClick={(element) => {
+          navigate(`${element.uuid}`)
+        }}
       />
     </div>
   )

@@ -54,6 +54,8 @@ export type DataTableProps<T> = {
   isLoading?: boolean
   isFetching?: boolean
   isError?: boolean
+  /** Clic sur une ligne → reçoit la donnée (row.original). Rend la ligne interactive. */
+  onRowClick?: (row: T) => void
 }
 
 // En-tête : poignée de drag (dnd-kit) + tri au clic (si sortKey) + libellé i18n.
@@ -134,6 +136,7 @@ export function DataTable<T>({
   isLoading,
   isFetching,
   isError,
+  onRowClick,
 }: DataTableProps<T>) {
   const {
     namespace,
@@ -260,7 +263,25 @@ export function DataTable<T>({
                 </TableRow>
               ) : (
                 rows.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow
+                    key={row.id}
+                    onClick={
+                      onRowClick ? () => onRowClick(row.original) : undefined
+                    }
+                    role={onRowClick ? "button" : undefined}
+                    tabIndex={onRowClick ? 0 : undefined}
+                    onKeyDown={
+                      onRowClick
+                        ? (e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault()
+                              onRowClick(row.original)
+                            }
+                          }
+                        : undefined
+                    }
+                    className={onRowClick ? "cursor-pointer" : undefined}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}

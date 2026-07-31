@@ -20,6 +20,8 @@ spatie/laravel-query-builder.
 - **API** : `const dt = useDataTable({ tableId, namespace, columns })` →
   `useX(dt.queries)` → `<DataTable instance={dt} data={rows} meta={meta} isLoading isFetching isError />`.
   Le hook ne construit pas la table (state-only) ; `<DataTable>` la monte avec `data`.
+  Prop optionnelle `onRowClick?: (row: T) => void` : reçoit `row.original`, rend la
+  ligne interactive (clic + clavier Enter/Espace, `role="button"`, `cursor-pointer`).
 - **Colonne** : déclarer les clés serveur dans `ColumnDef.meta` — `sortKey`,
   `filter: { key, type: 'text'|'select'|'boolean'|'dateRange', options?, multiple? }`,
   `noReorder?`, `noHide?`. **Clés explicites** : sans `sortKey`/`filter` → pas de

@@ -95,6 +95,54 @@ describe("adaptFilters", () => {
       }),
     ).toBe("f[tags]=a,b&s=-updated_at&page=1&per_page=10")
   })
+
+  it("joint un select multi en liste comma (contrat spatie array)", () => {
+    expect(
+      adaptFilters({
+        filters: { status: ["active", "pending"] },
+      }),
+    ).toBe("f[status]=active,pending&s=-updated_at&page=1&per_page=10")
+  })
+
+  it("ignore un tableau vide (multi-select vidé)", () => {
+    expect(
+      adaptFilters({
+        filters: { status: [] },
+      }),
+    ).toBe("s=-updated_at&page=1&per_page=10")
+  })
+
+  it("sérialise un date-range en opérateurs dynamiques spatie", () => {
+    expect(
+      adaptFilters({
+        filters: { created_at: { gte: "2026-01-01", lte: "2026-01-31" } },
+      }),
+    ).toBe("f[created_at]=>=2026-01-01,<=2026-01-31&s=-updated_at&page=1&per_page=10")
+  })
+
+  it("sérialise un range avec la borne basse seule", () => {
+    expect(
+      adaptFilters({
+        filters: { created_at: { gte: "2026-01-01" } },
+      }),
+    ).toBe("f[created_at]=>=2026-01-01&s=-updated_at&page=1&per_page=10")
+  })
+
+  it("sérialise un range avec la borne haute seule", () => {
+    expect(
+      adaptFilters({
+        filters: { created_at: { lte: "2026-01-31" } },
+      }),
+    ).toBe("f[created_at]=<=2026-01-31&s=-updated_at&page=1&per_page=10")
+  })
+
+  it("ignore un range sans borne", () => {
+    expect(
+      adaptFilters({
+        filters: { created_at: {} },
+      }),
+    ).toBe("s=-updated_at&page=1&per_page=10")
+  })
 })
 
 describe("adaptSort", () => {

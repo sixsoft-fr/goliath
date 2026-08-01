@@ -16,6 +16,8 @@
 - List/table filters are serialized as bracketed query params `f[key]=value` (not a single JSON `f` param).
 - TypeScript is configured with `erasableSyntaxOnly`; prefer `as const` objects plus derived types over TypeScript enums.
 - Hugeicons: import icon glyphs from `@hugeicons/core-free-icons` and use `HugeiconsIcon` from `@hugeicons/react`.
+- HTTP calls use `api` from `@/lib/api` (ky), not legacy `ApiService`.
+- Subject context (`subject.context.tsx`) is both page show/edit state and a resource/identifier bridge: fluent setters (`setResource` / `setIdentifier` / `setModel`), `identifierType` inferred (`number` → `"id"`, UUID → `"uuid"`, else `"slug"`), no `FlexService` inside the context — consumers call `useFlex(resource, identifier)`; mirror Auth (`createContext(null)`, `useSubject` throws outside provider).
 
 ## Child DOX Index
 

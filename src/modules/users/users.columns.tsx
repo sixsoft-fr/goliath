@@ -1,6 +1,6 @@
-import { useTranslation } from "react-i18next"
 import type { ColumnDef } from "@tanstack/react-table"
 import { DateCell } from "@/components/ds/data-table/cells/date.cell"
+import { StatusCell } from "@/components/ds/data-table/cells/status.cell"
 import type { User } from "./users.types"
 
 // User (auth) ne porte pas de `status` ; colonne démo via accessor élargi.
@@ -12,11 +12,7 @@ const STATUS_OPTIONS = [
   { value: "inactive" },
 ] as const
 
-function StatusCell({ value }: { value?: string }) {
-  const { t } = useTranslation("users")
-  if (!value) return <span className="text-muted-foreground">—</span>
-  return <span>{t(`values.status.${value}`, { defaultValue: value })}</span>
-}
+
 
 /**
  * Colonnes de référence. Aucun `header` (le DataTable résout `users:fields.<id>`).
@@ -34,7 +30,7 @@ export const usersColumns: ColumnDef<User>[] = [
   {
     id: "status",
     accessorFn: (row) => (row as UserRow).current_status?.name ?? undefined,
-    cell: ({ getValue }) => <StatusCell value={getValue<string | undefined>()} />,
+    cell: ({ getValue }) => <StatusCell value={getValue<string | undefined>()} ns="users" />,
     meta: {
       filter: {
         key: "status",

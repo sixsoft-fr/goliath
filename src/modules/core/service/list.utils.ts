@@ -25,26 +25,54 @@ export function adaptFilters(params: TableQueries): string {
   return toQueryString(elements);
 }
 
+/**
+ * Date/number range filter, sérialisé en opérateurs dynamiques spatie.
+ * `{ gte: "2026-01-01", lte: "2026-01-31" }` → `>=2026-01-01,<=2026-01-31`
+ * (AllowedFilter::operator(FilterOperator::DYNAMIC), virgule = AND).
+ */
+export type RangeFilter = {
+  gte?: string | number;
+  lte?: string | number;
+};
+
+function serializeRange(range: RangeFilter): string {
+  const bounds: string[] = [];
+  if (range.gte !== undefined && range.gte !== "") bounds.push(`>=${range.gte}`);
+  if (range.lte !== undefined && range.lte !== "") bounds.push(`<=${range.lte}`);
+  return bounds.join(",");
+}
+
 function flattenFilters(
   filters?: Record<string, unknown>,
 ): Record<string, string | number | boolean> {
   if (!filters) return {};
 
-  return Object.fromEntries(
-    Object.entries(filters)
-      .filter(([, value]) => value !== undefined && value !== null)
-      .map(([key, value]) => {
-        if (
-          typeof value === "string" ||
-          typeof value === "number" ||
-          typeof value === "boolean"
-        ) {
-          return [`f[${key}]`, value] as const;
-        }
+  const out: Record<string, string | number | boolean> = {};
 
-        return [`f[${key}]`, String(value)] as const;
-      }),
-  );
+  for (const [key, value] of Object.entries(filters)) {
+    if (value === undefined || value === null) continue;
+
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      out[`f[${key}]`] = value;
+      continue;
+    }
+
+    // Multi-select : liste comma spatie. Tableau vide (filtre vidé) → ignoré.
+    if (Array.isArray(value)) {
+      if (value.length > 0) out[`f[${key}]`] = value.join(",");
+      continue;
+    }
+
+    // Objet → date-range (opérateurs dynamiques spatie). Sans borne → ignoré.
+    const serialized = serializeRange(value as RangeFilter);
+    if (serialized) out[`f[${key}]`] = serialized;
+  }
+
+  return out;
 }
 
 /**

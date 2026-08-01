@@ -6,6 +6,7 @@ import { RequireAuth } from "@/modules/auth/require-auth"
 const Home = lazy(() => import("@/modules/home/pages/Home"))
 const NotFound = lazy(() => import("@/modules/errors/pages/NotFound"))
 const Login = lazy(() => import("@/modules/auth/pages/Login"))
+const Users = lazy(() => import("@/modules/users/pages/UsersPage"))
 
 export function App() {
   return (
@@ -15,6 +16,7 @@ export function App() {
 
       <Route path="app" element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<Home />} />
+        <Route path="users" element={<Users />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

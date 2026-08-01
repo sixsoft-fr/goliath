@@ -1,0 +1,16 @@
+{
+  "title": "Utilisateurs",
+  "fields": {
+    "name": "Nom",
+    "email": "E-mail",
+    "status": "Statut",
+    "created_at": "Créé le"
+  },
+  "values": {
+    "status": {
+      "active": "Actif",
+      "pending": "En attente",
+      "inactive": "Inactif"
+    }
+  }
+}

@@ -1,1 +1,22 @@
-{}
+{
+  "table": {
+    "search": "Search…",
+    "filters": "Filters",
+    "columns": "Columns",
+    "clearFilters": "Clear filters",
+    "noResults": "No results",
+    "error": "An error occurred while loading.",
+    "rowsPerPage": "Rows per page",
+    "page": "Page {{page}} of {{total}}",
+    "previous": "Previous",
+    "next": "Next",
+    "total_one": "{{count}} result",
+    "total_other": "{{count}} results",
+    "all": "All",
+    "yes": "Yes",
+    "no": "No",
+    "from": "From",
+    "to": "To",
+    "dateRange": "Select a period"
+  }
+}

@@ -100,7 +100,14 @@ test("liste les utilisateurs et envoie les paramètres spatie (query + tri)", as
   await page.getByTestId("datatable-sort-name").click()
   await sortReq
 
-  expect(pageErrors).toEqual([])
+  // On détecte les vraies erreurs app (crash React…), en ignorant le flake
+  // dev-server de Vite : le chunk lazy /app/users peut échouer à se charger
+  // ("Importing a module script failed") quand plusieurs navigateurs le
+  // compilent à froid en parallèle. Absent en CI (workers=1) et en prod (build).
+  const appErrors = pageErrors.filter(
+    (e) => !/Importing a module script failed/i.test(e),
+  )
+  expect(appErrors).toEqual([])
 })
 
 test("affiche l'état vide quand aucune ligne", async ({ page }) => {

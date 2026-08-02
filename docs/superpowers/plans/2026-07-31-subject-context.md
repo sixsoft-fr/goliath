@@ -31,7 +31,7 @@
 - [ ] **Step 1: Run unit tests**
 
 ```bash
-npx vitest run
+bunx vitest run
 ```
 
 Expected: PASS (baseline vert). Si rouge → **stop**, fixer ou reporter avant toute feature.
@@ -39,7 +39,7 @@ Expected: PASS (baseline vert). Si rouge → **stop**, fixer ou reporter avant t
 - [ ] **Step 2: Run e2e**
 
 ```bash
-npx playwright test
+bunx playwright test
 ```
 
 Expected: PASS. Si rouge → **stop**, fixer ou reporter.
@@ -81,7 +81,7 @@ describe("inferIdentifierType", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-npx vitest run src/modules/core/context/subject.context.test.tsx
+bunx vitest run src/modules/core/context/subject.context.test.tsx
 ```
 
 Expected: FAIL — `inferIdentifierType` not exported / not defined.
@@ -189,7 +189,7 @@ Note: full Provider is included here so later tasks don’t rewrite the file —
 - [ ] **Step 4: Run inferIdentifierType tests**
 
 ```bash
-npx vitest run src/modules/core/context/subject.context.test.tsx
+bunx vitest run src/modules/core/context/subject.context.test.tsx
 ```
 
 Expected: PASS for the three `inferIdentifierType` cases.
@@ -309,7 +309,7 @@ Keep imports consolidated at the top of the file (no inline imports). Remove unu
 - [ ] **Step 2: Run tests**
 
 ```bash
-npx vitest run src/modules/core/context/subject.context.test.tsx
+bunx vitest run src/modules/core/context/subject.context.test.tsx
 ```
 
 Expected: PASS (implementation already in Task 1). If any fail, fix `SubjectProvider` / `useSubject` until green — do not weaken assertions.
@@ -345,7 +345,7 @@ export * from "./context/subject.context"
 - [ ] **Step 2: Typecheck smoke**
 
 ```bash
-npx tsc --noEmit
+bunx tsc --noEmit
 ```
 
 Expected: PASS (no new errors from the export).
@@ -403,7 +403,7 @@ Contexte React de la ressource « courante » (show/edit) : `resource`,
 
 ## Verification
 
-- `npx vitest run src/modules/core/context/subject.context.test.tsx`
+- `bunx vitest run src/modules/core/context/subject.context.test.tsx`
 
 ## Child DOX Index
 
@@ -440,7 +440,7 @@ EOF
 - [ ] **Step 1: Run full vitest**
 
 ```bash
-npx vitest run
+bunx vitest run
 ```
 
 Expected: PASS, including subject context suite.
@@ -448,7 +448,7 @@ Expected: PASS, including subject context suite.
 - [ ] **Step 2: Run e2e**
 
 ```bash
-npx playwright test
+bunx playwright test
 ```
 
 Expected: PASS (no e2e impact expected; baseline rule still applies).

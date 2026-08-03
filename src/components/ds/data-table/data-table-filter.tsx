@@ -13,6 +13,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -97,17 +98,19 @@ function SelectFilter<T>({
           }
         />
         <DropdownMenuContent align="start">
-          <DropdownMenuLabel>{label}</DropdownMenuLabel>
-          {def.options.map((o) => (
-            <DropdownMenuCheckboxItem
-              key={o.value}
-              checked={selected.includes(o.value)}
-              onCheckedChange={() => toggle(o.value)}
-              onSelect={(e) => e.preventDefault()}
-            >
-              {optionLabel(o.value)}
-            </DropdownMenuCheckboxItem>
-          ))}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            {def.options.map((o) => (
+              <DropdownMenuCheckboxItem
+                key={o.value}
+                checked={selected.includes(o.value)}
+                onCheckedChange={() => toggle(o.value)}
+                onSelect={(e) => e.preventDefault()}
+              >
+                {optionLabel(o.value)}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

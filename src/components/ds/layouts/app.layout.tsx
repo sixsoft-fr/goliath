@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Outlet } from "react-router"
 import { Header } from "../header"
+import { Page } from "@/modules/core/Page"
 
 export default function AppLayout() {
   return (
@@ -13,7 +14,9 @@ export default function AppLayout() {
       <SidebarInset>
         <Header />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <Outlet />
+          <Page>
+            <Outlet />
+          </Page>
         </div>
       </SidebarInset>
     </SidebarProvider>

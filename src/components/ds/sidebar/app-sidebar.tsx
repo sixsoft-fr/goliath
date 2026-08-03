@@ -24,6 +24,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { appConfig } from "@/config/app.config"
 import TeamWithoutSwitcher from "./team-without-switcher"
+import { NavAdmin } from "./admin"
 
 // This is sample data.
 const data = {
@@ -147,7 +148,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavProjects projects={data.projects} />
+        <NavAdmin />
         <NavNotifications />
         <LanguageSwitcher />
         <NavUser />

@@ -4,6 +4,8 @@ import type { User } from "../users.types"
 import { useUsers } from "../users.queries"
 import { usersColumns } from "../users.columns"
 import { useNavigate } from "react-router"
+import { useSubject } from "@/modules/core"
+import { useEffect } from "react"
 
 export default function UsersPage() {
   const { t } = useTranslation("users")
@@ -14,6 +16,11 @@ export default function UsersPage() {
     columns: usersColumns,
   })
   const query = useUsers(dt.queries)
+
+  const { setResource } = useSubject()
+  useEffect(() => {
+    setResource("users")
+  }, [setResource])
 
   return (
     <div className="flex flex-col gap-4 p-4">

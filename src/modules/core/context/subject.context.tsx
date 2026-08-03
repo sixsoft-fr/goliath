@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, use, useState, type ReactNode } from "react"
+import { createContext, use, useMemo, useState, type ReactNode } from "react"
 import type { Model } from "@/modules/core/model.types"
 
 export const IDENTIFIER_TYPES = ["uuid", "id", "slug"] as const
@@ -46,28 +46,32 @@ const initialState: SubjectState = {
 export function SubjectProvider({ children }: { children: ReactNode }) {
   const [subject, setSubject] = useState<SubjectState>(initialState)
 
-  const fluent: SubjectFluent = {
-    setResource(resource) {
-      setSubject((prev) => ({ ...prev, resource }))
-      return fluent
-    },
-    setIdentifier(identifier) {
-      setSubject((prev) => ({
-        ...prev,
-        identifier,
-        identifierType: inferIdentifierType(identifier),
-      }))
-      return fluent
-    },
-    setModel(model) {
-      setSubject((prev) => ({ ...prev, model }))
-      return fluent
-    },
-  }
+  // Stable setters: setSubject is stable, so build the fluent object once.
+  // Rebuilding it each render gave every setter a new identity, looping any
+  // effect that depends on one (e.g. useEffect(() => setResource(...), [setResource])).
+  const fluent = useMemo<SubjectFluent>(() => {
+    const f: SubjectFluent = {
+      setResource(resource) {
+        setSubject((prev) => ({ ...prev, resource }))
+        return f
+      },
+      setIdentifier(identifier) {
+        setSubject((prev) => ({
+          ...prev,
+          identifier,
+          identifierType: inferIdentifierType(identifier),
+        }))
+        return f
+      },
+      setModel(model) {
+        setSubject((prev) => ({ ...prev, model }))
+        return f
+      },
+    }
+    return f
+  }, [])
 
-  function clear() {
-    setSubject(initialState)
-  }
+  const clear = useMemo(() => () => setSubject(initialState), [])
 
   return (
     <SubjectContext

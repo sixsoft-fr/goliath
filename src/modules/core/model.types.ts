@@ -8,4 +8,4 @@ export type Model = {
     morph_name: string;
 }
 
-export type DynamicModel<T> = Model & T & Record<string, any>;
+export type DynamicModel<T> = Model & T & Record<string, unknown>;

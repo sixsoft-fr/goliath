@@ -143,10 +143,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         )}
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={appConfig.sidebar.platform} sectionTitle="sidebar.platform.title" />
       </SidebarContent>
       <SidebarFooter>
-        <NavMain items={appConfig.sidebar.admin} />
+        <NavMain items={appConfig.sidebar.admin} sectionTitle="sidebar.admin.title" className="px-0" />
         <NavNotifications />
         <LanguageSwitcher />
         <NavUser />

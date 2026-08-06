@@ -71,6 +71,10 @@ export function refreshAccessToken(): Promise<string | null> {
 export const api = ky.create({
   prefix: appConfig.api.baseUrl,
   credentials: "include",
+  // Sans ça, fetch envoie Accept: */* et Laravel/Lorisleiva ne voit pas
+  // expectsJson() : les actions single-resource (ShowUser…) renvoient le modèle
+  // nu au lieu du JsonResource enveloppé { data }, cassant `.then(b => b.data)`.
+  headers: { Accept: "application/json" },
   retry: 0,
   hooks: {
     beforeRequest: [

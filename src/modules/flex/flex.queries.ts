@@ -1,5 +1,4 @@
 import { type PaginatedResponse, type TableQueries } from "@/modules/core"
-import type { KyResponse } from "ky"
 import { FlexService } from "./flex.service"
 import {
   keepPreviousData,
@@ -21,13 +20,18 @@ export const useFlexList = <T>(
   })
 }
 
+// Dé-wrappe Resource<T> → T (le modèle), comme le détail consommé par Show.
 export const useFlex = <T>(
   resource: string,
   id: string | number
-): UseQueryResult<KyResponse<T>, Error> => {
-  const service = new FlexService(resource)
+): UseQueryResult<T, Error> => {
   return useQuery({
     queryKey: [resource, id],
-    queryFn: () => service.setIdentifier(id).get<T>(),
+    queryFn: () =>
+      new FlexService(resource)
+        .setIdentifier(id)
+        .get<T>()
+        .then((r) => r.json())
+        .then((body) => body.data),
   })
 }

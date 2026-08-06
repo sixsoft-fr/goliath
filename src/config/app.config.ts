@@ -8,7 +8,7 @@ import {
 import {
   type SidebarConfig,
   sidebarConfig as sidebar,
-} from "@/components/ds/sidebar/sidebar.config"
+} from "@/modules/sidebar/sidebar.config"
 
 export type AppConfig = {
   auth: AuthConfig

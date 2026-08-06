@@ -1,6 +1,5 @@
 import * as React from "react"
 import { NavMain } from "@/components/ds/sidebar/nav-main"
-import { NavProjects } from "@/components/ds/sidebar/nav-projects"
 import { NavUser } from "@/modules/auth/components"
 import { NavNotifications } from "@/modules/notifications"
 import { LanguageSwitcher } from "@/modules/locales"
@@ -24,7 +23,6 @@ import {
 } from "@hugeicons/core-free-icons"
 import { appConfig } from "@/config/app.config"
 import TeamWithoutSwitcher from "./team-without-switcher"
-import { NavAdmin } from "./admin"
 
 // This is sample data.
 const data = {
@@ -148,7 +146,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavAdmin />
+        <NavMain items={appConfig.sidebar.admin} />
         <NavNotifications />
         <LanguageSwitcher />
         <NavUser />

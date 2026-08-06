@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import { useTranslation } from "react-i18next"
 
 export function NavMain({
   items,
@@ -30,6 +31,7 @@ export function NavMain({
     }[]
   }[]
 }) {
+  const { t } = useTranslation("sidebar")
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -42,10 +44,10 @@ export function NavMain({
             render={<SidebarMenuItem />}
           >
             <CollapsibleTrigger
-              render={<SidebarMenuButton tooltip={item.title} />}
+              render={<SidebarMenuButton tooltip={t(item.title)} />}
             >
               {item.icon}
-              <span>{item.title}</span>
+              <span>{t(item.title)}</span>
               <HugeiconsIcon
                 icon={ArrowRight01Icon}
                 strokeWidth={2}
@@ -57,7 +59,7 @@ export function NavMain({
                 {item.items?.map((subItem) => (
                   <SidebarMenuSubItem key={subItem.title}>
                     <SidebarMenuSubButton render={<a href={subItem.url} />}>
-                      <span>{subItem.title}</span>
+                      <span>{t(subItem.title)}</span>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 ))}

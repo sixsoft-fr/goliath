@@ -16,7 +16,7 @@ const List: FC<ListProps> = ({ resource }: ListProps) => {
   const dt = useDataTable<DynamicModel<unknown>>({
     tableId: resource,
     namespace: resource,
-    columns: columns,
+    columns: [], // should be deduced from list response meta.fields
   })
   const query = useFlexList<unknown>(resource, dt.queries)
 

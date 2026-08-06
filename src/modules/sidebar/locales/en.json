@@ -1,6 +1,10 @@
 {
   "sidebar": {
+    "platform": {
+      "title": "Platform"
+    },
     "admin": {
+      "title": "Admin",
       "users-menu": "Users",
       "users": "Users"
     }

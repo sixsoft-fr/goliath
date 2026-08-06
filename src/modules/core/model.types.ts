@@ -1,11 +1,11 @@
 export type Model = {
-    id: number;
-    uuid: string;
+    readonly id: number;
+    readonly uuid: string;
     slug?: string;
-    createdAt: Date;
-    updatedAt: Date;
-    deletedAt: Date | null;
-    morph_name: string;
+    readonly createdAt: Date;
+    readonly updatedAt: Date;
+    readonly deletedAt: Date | null;
+    readonly morph_name: string;
 }
 
 export type DynamicModel<T> = Model & T & Record<string, unknown>;

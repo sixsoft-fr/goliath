@@ -23,7 +23,9 @@ describe("buildSort", () => {
   })
 
   it("préfixe `-` en desc", () => {
-    expect(buildSort([{ id: "created_at", desc: true }], keys)).toBe("-created_at")
+    expect(buildSort([{ id: "created_at", desc: true }], keys)).toBe(
+      "-created_at"
+    )
   })
 
   it("joint plusieurs tris par virgule (multi-capable)", () => {
@@ -33,8 +35,8 @@ describe("buildSort", () => {
           { id: "name", desc: false },
           { id: "created_at", desc: true },
         ],
-        keys,
-      ),
+        keys
+      )
     ).toBe("name,-created_at")
   })
 
@@ -51,8 +53,8 @@ describe("buildFilters", () => {
           { id: "name", value: "jean" },
           { id: "actions", value: "ignored" },
         ],
-        keys,
-      ),
+        keys
+      )
     ).toEqual({ name: "jean" })
   })
 
@@ -63,9 +65,12 @@ describe("buildFilters", () => {
           { id: "status", value: ["active", "pending"] },
           { id: "created_at", value: { gte: "2026-01-01" } },
         ],
-        keys,
-      ),
-    ).toEqual({ status: ["active", "pending"], created_at: { gte: "2026-01-01" } })
+        keys
+      )
+    ).toEqual({
+      status: ["active", "pending"],
+      created_at: { gte: "2026-01-01" },
+    })
   })
 })
 
@@ -79,8 +84,8 @@ describe("buildQueries", () => {
           globalFilter: "acme",
           pagination: { pageIndex: 2, pageSize: 25 },
         },
-        keys,
-      ),
+        keys
+      )
     ).toEqual({
       query: "acme",
       page: 3, // pageIndex + 1
@@ -99,8 +104,8 @@ describe("buildQueries", () => {
           globalFilter: "",
           pagination: { pageIndex: 0, pageSize: 10 },
         },
-        keys,
-      ),
+        keys
+      )
     ).toEqual({
       query: undefined,
       page: 1,

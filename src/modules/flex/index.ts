@@ -1,2 +1,2 @@
-export * from "./flex.service";
-export * from "./flex.queries";
+export * from "./flex.service"
+export * from "./flex.queries"

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   resolveTooltipPosition,
@@ -9,7 +9,7 @@ import {
   type TooltipPosition,
   type TooltipRoundness,
   type TooltipVariant,
-} from "@/components/evilcharts/ui/echarts-tooltip";
+} from "@/components/evilcharts/ui/echarts-tooltip"
 import {
   buildChartCss,
   getColorsCount,
@@ -17,7 +17,7 @@ import {
   withAlpha,
   type ChartConfig,
   type ResolvedColors,
-} from "@/components/evilcharts/ui/echarts-chart";
+} from "@/components/evilcharts/ui/echarts-chart"
 import {
   Children,
   isValidElement,
@@ -29,36 +29,39 @@ import {
   useState,
   type FC,
   type ReactNode,
-} from "react";
-import { TooltipComponent, type TooltipComponentOption } from "echarts/components";
-import { SankeyChart, type SankeySeriesOption } from "echarts/charts";
-import { motion, useReducedMotion } from "motion/react";
-import { CanvasRenderer } from "echarts/renderers";
-import type { ComposeOption } from "echarts/core";
-import * as echarts from "echarts/core";
+} from "react"
+import {
+  TooltipComponent,
+  type TooltipComponentOption,
+} from "echarts/components"
+import { SankeyChart, type SankeySeriesOption } from "echarts/charts"
+import { motion, useReducedMotion } from "motion/react"
+import { CanvasRenderer } from "echarts/renderers"
+import type { ComposeOption } from "echarts/core"
+import * as echarts from "echarts/core"
 
 // Re-export the shared types that were previously declared inline here, so
 // existing consumers/examples keep importing them from the chart module.
-export type { ChartConfig, TooltipPosition, TooltipRoundness, TooltipVariant };
+export type { ChartConfig, TooltipPosition, TooltipRoundness, TooltipVariant }
 
 // Modular registration keeps the bundle lean — only the pieces this chart needs.
 // A sankey draws its own node/link geometry, so there is no grid, axis, or
 // dataZoom here; the tooltip is the one extra component. GraphicComponent is
 // deliberately NOT registered — this chart adds no raw graphic overlays.
-echarts.use([SankeyChart, TooltipComponent, CanvasRenderer]);
+echarts.use([SankeyChart, TooltipComponent, CanvasRenderer])
 
-type EChartsInstance = ReturnType<typeof echarts.init>;
+type EChartsInstance = ReturnType<typeof echarts.init>
 
 // The exact option surface this chart uses — a sankey series plus the tooltip.
 // Narrower than echarts' full EChartsOption, so a misspelled key fails the
 // compile instead of silently reaching setOption.
-type EChartsOption = ComposeOption<SankeySeriesOption | TooltipComponentOption>;
+type EChartsOption = ComposeOption<SankeySeriesOption | TooltipComponentOption>
 
 // Single-item views of the composed series' node/link arrays — the modular entry
 // points don't export the sankey node/edge item option types directly, so derive
 // them from the composed series to keep the builders fully type-checked.
-type SankeyNodeItem = NonNullable<SankeySeriesOption["data"]>[number];
-type SankeyEdgeItem = NonNullable<SankeySeriesOption["links"]>[number];
+type SankeyNodeItem = NonNullable<SankeySeriesOption["data"]>[number]
+type SankeyEdgeItem = NonNullable<SankeySeriesOption["links"]>[number]
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -70,18 +73,18 @@ type SankeyEdgeItem = NonNullable<SankeySeriesOption["links"]>[number];
 // a single clip rect sweeping across the whole diagram; it ignores the graph, so
 // bands appear before the nodes they leave. This one is driven frame by frame
 // instead — see the intro rAF effect.) Times are in milliseconds.
-const INTRO_COLUMN_STAGGER = 130; // delay between one column and the next
-const INTRO_NODE_GROW = 340; // a single node opening from its centre
-const INTRO_LINK_DELAY = 90; // head start a column's nodes get over their bands
-const INTRO_LINK_DRAW = 520; // a band drawing from its source to its target
-const INTRO_FEATHER = 0.05; // softening on the growing/drawing edge, in gradient offset
-const INTRO_NODE_SCALE_FROM = 0.8; // a node opens from this fraction of its height, not from nothing
-const LOADING_ANIMATION_DURATION = 2000; // shimmer loop, in milliseconds
-const DEFAULT_NODE_WIDTH = 10;
-const DEFAULT_NODE_PADDING = 10;
-const DEFAULT_LINK_CURVATURE = 0.5;
-const DEFAULT_ITERATIONS = 32;
-const GRAY = "rgba(120, 120, 120, 1)"; // fallback when a node has no resolved color
+const INTRO_COLUMN_STAGGER = 130 // delay between one column and the next
+const INTRO_NODE_GROW = 340 // a single node opening from its centre
+const INTRO_LINK_DELAY = 90 // head start a column's nodes get over their bands
+const INTRO_LINK_DRAW = 520 // a band drawing from its source to its target
+const INTRO_FEATHER = 0.05 // softening on the growing/drawing edge, in gradient offset
+const INTRO_NODE_SCALE_FROM = 0.8 // a node opens from this fraction of its height, not from nothing
+const LOADING_ANIMATION_DURATION = 2000 // shimmer loop, in milliseconds
+const DEFAULT_NODE_WIDTH = 10
+const DEFAULT_NODE_PADDING = 10
+const DEFAULT_LINK_CURVATURE = 0.5
+const DEFAULT_ITERATIONS = 32
+const GRAY = "rgba(120, 120, 120, 1)" // fallback when a node has no resolved color
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme knobs — every opacity in the diagram draws from these. Base colors come
@@ -89,25 +92,25 @@ const GRAY = "rgba(120, 120, 120, 1)"; // fallback when a node has no resolved c
 // opacity factors live here. `withAlpha` MULTIPLIES a token's own alpha, so a
 // translucent background/border token stays honest. Tune here, not inline.
 // ─────────────────────────────────────────────────────────────────────────────
-const NODE_FILL_OPACITY = 1; // resting/selected node rectangle — the bold, opaque element (stroke analogue) reads solid at full opacity (bumped from Recharts fillOpacity 0.9)
-const NODE_DIM_OPACITY = 0.3; // node not connected to the current selection (stroke-dim analogue — kept)
-const LINK_FILL_OPACITY = 0.4; // resting link band (Recharts fillOpacity 0.4 — the translucent fill base, kept)
-const LINK_DIM_OPACITY = 0.05; // link not touching the current selection — the translucent band (fill analogue) recedes further (halved from 0.1)
-const LABEL_DIM_OPACITY = 0.3; // node label faded when its node is dimmed
-const INSIDE_PLATE_ALPHA = 0.55; // inside-label plate fill, × background alpha (twin's white/50 · black/60 wash)
-const INSIDE_RIM_WIDTH = 1; // colored rim around the inside-label plate, in pixels (matches the twin's 1px inset edge)
+const NODE_FILL_OPACITY = 1 // resting/selected node rectangle — the bold, opaque element (stroke analogue) reads solid at full opacity (bumped from Recharts fillOpacity 0.9)
+const NODE_DIM_OPACITY = 0.3 // node not connected to the current selection (stroke-dim analogue — kept)
+const LINK_FILL_OPACITY = 0.4 // resting link band (Recharts fillOpacity 0.4 — the translucent fill base, kept)
+const LINK_DIM_OPACITY = 0.05 // link not touching the current selection — the translucent band (fill analogue) recedes further (halved from 0.1)
+const LABEL_DIM_OPACITY = 0.3 // node label faded when its node is dimmed
+const INSIDE_PLATE_ALPHA = 0.55 // inside-label plate fill, × background alpha (twin's white/50 · black/60 wash)
+const INSIDE_RIM_WIDTH = 1 // colored rim around the inside-label plate, in pixels (matches the twin's 1px inset edge)
 
 // The loading skeleton is a fixed gray sankey swept by a shimmer band. Unlike the
 // area chart's clip window (fully transparent outside the sweep), the sankey keeps
 // a low BASE floor so the blocky node/link geometry stays legible between sweeps —
 // the bright band still rides across as an absolute-pixel gradient shared by nodes
 // and links, sine-feathered at its edges.
-const LOADING_NODE_FLOOR = 0.1; // node fill outside the sweep, × foreground alpha
-const LOADING_NODE_PEAK = 0.42; // node fill inside the sweep, × foreground alpha
-const LOADING_LINK_FLOOR = 0.04; // link fill outside the sweep, × foreground alpha
-const LOADING_LINK_PEAK = 0.16; // link fill inside the sweep, × foreground alpha
-const LOADING_SHIMMER_BAND = 0.22; // sweep half-width, fraction of chart width
-const LOADING_SHIMMER_FEATHER = 0.22; // eased edge softening of the sweep
+const LOADING_NODE_FLOOR = 0.1 // node fill outside the sweep, × foreground alpha
+const LOADING_NODE_PEAK = 0.42 // node fill inside the sweep, × foreground alpha
+const LOADING_LINK_FLOOR = 0.04 // link fill outside the sweep, × foreground alpha
+const LOADING_LINK_PEAK = 0.16 // link fill inside the sweep, × foreground alpha
+const LOADING_SHIMMER_BAND = 0.22 // sweep half-width, fraction of chart width
+const LOADING_SHIMMER_FEATHER = 0.22 // eased edge softening of the sweep
 
 // Fixed skeleton graph — three columns, auto-laid-out by echarts. Values are
 // arbitrary; only the shape matters while loading.
@@ -120,7 +123,7 @@ const SKELETON_NODES = [
   { name: "m2" },
   { name: "e0" },
   { name: "e1" },
-];
+]
 const SKELETON_LINKS = [
   { source: "s0", target: "m0", value: 8 },
   { source: "s0", target: "m1", value: 5 },
@@ -132,20 +135,20 @@ const SKELETON_LINKS = [
   { source: "m1", target: "e0", value: 9 },
   { source: "m1", target: "e1", value: 6 },
   { source: "m2", target: "e1", value: 8 },
-];
+]
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type LinkVariant = "gradient" | "solid" | "source" | "target";
-export type NodeLabelPosition = "inside" | "outside";
+export type LinkVariant = "gradient" | "solid" | "source" | "target"
+export type NodeLabelPosition = "inside" | "outside"
 // TooltipVariant and TooltipRoundness now live in @/registry/ui/echarts-tooltip and
 // are imported + re-exported at the top of this file.
 // Sankey has no directional draw-in — its entrance follows the graph, not an
 // axis: "default" plays the column cascade, "none" turns it off. Kept as a small
 // union for copy-paste parity with the other EvilCharts entrance off-switches.
-export type SankeyAnimationType = "none" | "default";
+export type SankeyAnimationType = "none" | "default"
 
 // ChartConfig (and its AtLeastOneThemeColor constraint) now lives in the shared
 // @/registry/ui/echarts-chart module and is imported + re-exported at the top.
@@ -153,44 +156,46 @@ export type SankeyAnimationType = "none" | "default";
 // A single flow node. `icon` mirrors the Recharts twin's data shape for source
 // compatibility, but canvas can't mount a React node, so it is not rendered.
 export type SankeyNode = {
-  name: string;
-  icon?: ReactNode;
-};
+  name: string
+  icon?: ReactNode
+}
 
 // A single directed flow. `source`/`target` are indices into `nodes`, matching
 // the Recharts Sankey data contract.
 export type SankeyLink = {
-  source: number;
-  target: number;
-  value: number;
-};
+  source: number
+  target: number
+  value: number
+}
 
 export type SankeyData = {
-  nodes: SankeyNode[];
-  links: SankeyLink[];
-};
+  nodes: SankeyNode[]
+  links: SankeyLink[]
+}
 
 export interface EChartsSankeyChartProps {
-  data: SankeyData; // nodes + links rendered by the chart
-  config: ChartConfig; // node colors + labels keyed by node name
-  children: ReactNode; // composed parts — <Node>, <NodeLabel>, <Link>, <Tooltip>
-  className?: string; // extra classes for the chart container
-  nodeWidth?: number; // width of each node in pixels
-  nodePadding?: number; // vertical gap between nodes (echarts nodeGap)
-  linkCurvature?: number; // link curve amount, 0 (straight) to 1 (maximum)
-  iterations?: number; // layout iterations — higher is more accurate
+  data: SankeyData // nodes + links rendered by the chart
+  config: ChartConfig // node colors + labels keyed by node name
+  children: ReactNode // composed parts — <Node>, <NodeLabel>, <Link>, <Tooltip>
+  className?: string // extra classes for the chart container
+  nodeWidth?: number // width of each node in pixels
+  nodePadding?: number // vertical gap between nodes (echarts nodeGap)
+  linkCurvature?: number // link curve amount, 0 (straight) to 1 (maximum)
+  iterations?: number // layout iterations — higher is more accurate
   // `sort` and `verticalAlign` mirror the Recharts twin's prop surface but have
   // no ECharts sankey equivalent (the layout always sorts + distributes
   // vertically). They are accepted and ignored; see the port notes.
-  sort?: boolean;
-  align?: "left" | "justify"; // horizontal node alignment (echarts nodeAlign)
-  verticalAlign?: "justify" | "top";
-  defaultSelectedNode?: string | null; // node selected on first render
-  onSelectionChange?: (selection: { dataKey: string; value: number } | null) => void; // fires when the selected node changes
-  isLoading?: boolean; // shows the animated loading skeleton
-  animation?: boolean; // master switch for the intro draw-in — false renders instantly
-  animationType?: SankeyAnimationType; // "none" disables the intro reveal
-  chartOptions?: Record<string, unknown>; // escape hatch merged over the built ECharts option
+  sort?: boolean
+  align?: "left" | "justify" // horizontal node alignment (echarts nodeAlign)
+  verticalAlign?: "justify" | "top"
+  defaultSelectedNode?: string | null // node selected on first render
+  onSelectionChange?: (
+    selection: { dataKey: string; value: number } | null
+  ) => void // fires when the selected node changes
+  isLoading?: boolean // shows the animated loading skeleton
+  animation?: boolean // master switch for the intro draw-in — false renders instantly
+  animationType?: SankeyAnimationType // "none" disables the intro reveal
+  chartOptions?: Record<string, unknown> // escape hatch merged over the built ECharts option
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -202,9 +207,9 @@ export interface EChartsSankeyChartProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface NodeProps {
-  radius?: number; // corner radius of node rectangles in pixels
-  isClickable?: boolean; // lets nodes be selected by clicking them
-  children?: ReactNode; // optional <NodeLabel> composition
+  radius?: number // corner radius of node rectangles in pixels
+  isClickable?: boolean // lets nodes be selected by clicking them
+  children?: ReactNode // optional <NodeLabel> composition
 }
 
 /**
@@ -212,12 +217,12 @@ export interface NodeProps {
  * its props and wires them into the ECharts sankey series, so it renders nothing
  * itself. Compose a <NodeLabel> inside it to show labels.
  */
-const Node: FC<NodeProps> = () => null;
+const Node: FC<NodeProps> = () => null
 
 export interface NodeLabelProps {
-  position?: NodeLabelPosition; // places labels inside or beside the nodes
-  showValues?: boolean; // appends each node's total flow value
-  valueFormatter?: (value: number) => string; // formats node values when shown
+  position?: NodeLabelPosition // places labels inside or beside the nodes
+  showValues?: boolean // appends each node's total flow value
+  valueFormatter?: (value: number) => string // formats node values when shown
 }
 
 /**
@@ -225,11 +230,11 @@ export interface NodeLabelProps {
  * configuration slot and renders nothing on its own. With no `position`, no
  * labels show — matching the Recharts twin.
  */
-const NodeLabel: FC<NodeLabelProps> = () => null;
+const NodeLabel: FC<NodeLabelProps> = () => null
 
 export interface LinkProps {
-  variant?: LinkVariant; // coloring strategy for the link bands
-  verticalPadding?: number; // reserved for parity with the Recharts twin (see notes)
+  variant?: LinkVariant // coloring strategy for the link bands
+  verticalPadding?: number // reserved for parity with the Recharts twin (see notes)
 }
 
 /**
@@ -237,17 +242,17 @@ export interface LinkProps {
  * read by the root and renders nothing itself. The `variant` controls how each
  * link band is colored.
  */
-const Link: FC<LinkProps> = () => null;
+const Link: FC<LinkProps> = () => null
 
 export interface TooltipProps {
-  variant?: TooltipVariant; // visual style of the tooltip surface
-  roundness?: TooltipRoundness; // border-radius of the tooltip
-  position?: TooltipPosition; // "variable" follows the pointer (default); "fixed" pins the tooltip near the top and tracks the pointer's X
-  defaultIndex?: number; // reserved for parity with the Recharts twin (see notes)
+  variant?: TooltipVariant // visual style of the tooltip surface
+  roundness?: TooltipRoundness // border-radius of the tooltip
+  position?: TooltipPosition // "variable" follows the pointer (default); "fixed" pins the tooltip near the top and tracks the pointer's X
+  defaultIndex?: number // reserved for parity with the Recharts twin (see notes)
 }
 
 /** Presence enables the hover tooltip. Renders nothing. */
-const Tooltip: FC<TooltipProps> = () => null;
+const Tooltip: FC<TooltipProps> = () => null
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Children collection — walk the declarative config into plain objects the option
@@ -255,83 +260,83 @@ const Tooltip: FC<TooltipProps> = () => null;
 // ─────────────────────────────────────────────────────────────────────────────
 
 type NodeSlot = {
-  radius: number;
-  isClickable: boolean;
-};
+  radius: number
+  isClickable: boolean
+}
 type NodeLabelSlot = {
-  position?: NodeLabelPosition; // undefined → no labels, like the Recharts twin
-  showValues: boolean;
-  valueFormatter?: (value: number) => string;
-};
+  position?: NodeLabelPosition // undefined → no labels, like the Recharts twin
+  showValues: boolean
+  valueFormatter?: (value: number) => string
+}
 type LinkSlot = {
-  variant: LinkVariant;
-  verticalPadding: number;
-};
+  variant: LinkVariant
+  verticalPadding: number
+}
 type TooltipSlot = {
-  present: boolean;
-  variant: TooltipVariant;
-  roundness: TooltipRoundness;
-  position: TooltipPosition;
-  defaultIndex?: number;
-};
+  present: boolean
+  variant: TooltipVariant
+  roundness: TooltipRoundness
+  position: TooltipPosition
+  defaultIndex?: number
+}
 
 type CollectedConfig = {
-  nodeConfig: NodeSlot;
-  nodeLabel: NodeLabelSlot | null;
-  linkConfig: LinkSlot;
-  tooltip: TooltipSlot;
-};
+  nodeConfig: NodeSlot
+  nodeLabel: NodeLabelSlot | null
+  linkConfig: LinkSlot
+  tooltip: TooltipSlot
+}
 
 function collectConfig(children: ReactNode): CollectedConfig {
-  let nodeConfig: NodeSlot = { radius: 0, isClickable: false };
-  let nodeLabel: NodeLabelSlot | null = null;
-  let linkConfig: LinkSlot = { variant: "gradient", verticalPadding: 0 };
+  let nodeConfig: NodeSlot = { radius: 0, isClickable: false }
+  let nodeLabel: NodeLabelSlot | null = null
+  let linkConfig: LinkSlot = { variant: "gradient", verticalPadding: 0 }
   let tooltip: TooltipSlot = {
     present: false,
     variant: "default",
     roundness: "lg",
     position: "variable",
-  };
+  }
 
   Children.forEach(children, (child) => {
-    if (!isValidElement(child)) return;
-    const type = child.type;
+    if (!isValidElement(child)) return
+    const type = child.type
 
     if (type === Node) {
-      const props = child.props as NodeProps;
+      const props = child.props as NodeProps
       nodeConfig = {
         radius: props.radius ?? 0,
         isClickable: props.isClickable ?? false,
-      };
+      }
       Children.forEach(props.children, (labelChild) => {
         if (isValidElement(labelChild) && labelChild.type === NodeLabel) {
-          const lp = labelChild.props as NodeLabelProps;
+          const lp = labelChild.props as NodeLabelProps
           nodeLabel = {
             position: lp.position,
             showValues: lp.showValues ?? false,
             valueFormatter: lp.valueFormatter,
-          };
+          }
         }
-      });
+      })
     } else if (type === Link) {
-      const props = child.props as LinkProps;
+      const props = child.props as LinkProps
       linkConfig = {
         variant: props.variant ?? "gradient",
         verticalPadding: props.verticalPadding ?? 0,
-      };
+      }
     } else if (type === Tooltip) {
-      const props = child.props as TooltipProps;
+      const props = child.props as TooltipProps
       tooltip = {
         present: true,
         variant: props.variant ?? "default",
         roundness: props.roundness ?? "lg",
         position: props.position ?? "variable",
         defaultIndex: props.defaultIndex,
-      };
+      }
     }
-  });
+  })
 
-  return { nodeConfig, nodeLabel, linkConfig, tooltip };
+  return { nodeConfig, nodeLabel, linkConfig, tooltip }
 }
 
 // Color plumbing (ChartConfig, getColorsCount, distributeColors, buildChartCss,
@@ -348,10 +353,15 @@ function collectConfig(children: ReactNode): CollectedConfig {
 // A node's fill: a vertical multi-stop gradient of its color slots (top → bottom),
 // or a solid color when it has only one. Mirrors the twin's `NodeColorGradients`,
 // which paints each node with a `y1=0 → y2=1` linear gradient.
-function nodeGradient(slots: string[]): string | echarts.graphic.LinearGradient {
-  if (slots.length <= 1) return slots[0] ?? GRAY;
-  const stops = slots.map((color, i) => ({ offset: i / (slots.length - 1), color }));
-  return new echarts.graphic.LinearGradient(0, 0, 0, 1, stops);
+function nodeGradient(
+  slots: string[]
+): string | echarts.graphic.LinearGradient {
+  if (slots.length <= 1) return slots[0] ?? GRAY
+  const stops = slots.map((color, i) => ({
+    offset: i / (slots.length - 1),
+    color,
+  }))
+  return new echarts.graphic.LinearGradient(0, 0, 0, 1, stops)
 }
 
 // A link band's fill for a given variant. `gradient` bakes the twin's 0.2/0.5/0.2
@@ -362,25 +372,25 @@ function edgeColor(
   variant: LinkVariant,
   sourceSlots: string[],
   targetSlots: string[],
-  foreground: string,
+  foreground: string
 ): string | echarts.graphic.LinearGradient {
   switch (variant) {
     case "gradient": {
-      const source = sourceSlots[0] ?? GRAY;
-      const target = targetSlots[0] ?? GRAY;
+      const source = sourceSlots[0] ?? GRAY
+      const target = targetSlots[0] ?? GRAY
       return new echarts.graphic.LinearGradient(0, 0, 1, 0, [
         { offset: 0, color: withAlpha(source, 0.2) },
         { offset: 0.5, color: withAlpha(source, 0.5) },
         { offset: 1, color: withAlpha(target, 0.2) },
-      ]);
+      ])
     }
     case "source":
-      return nodeGradient(sourceSlots);
+      return nodeGradient(sourceSlots)
     case "target":
-      return nodeGradient(targetSlots);
+      return nodeGradient(targetSlots)
     case "solid":
     default:
-      return foreground;
+      return foreground
   }
 }
 
@@ -395,68 +405,71 @@ function edgeColor(
 // layout moves, so no frame re-runs the sankey solver on different geometry.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Paint = string | echarts.graphic.LinearGradient;
+type Paint = string | echarts.graphic.LinearGradient
 type IntroState = {
-  elapsed: number; // milliseconds since the intro started
-  depths: Record<string, number>; // node name → column index
-};
+  elapsed: number // milliseconds since the intro started
+  depths: Record<string, number> // node name → column index
+}
 
 // Column index per node: the longest path from any source, which is what puts a
 // node in a later column than every node feeding it. Edges are relaxed until the
 // pass stops changing anything; the node-count cap keeps a malformed (cyclic)
 // graph from spinning forever.
 function computeNodeDepths(data: SankeyData): Record<string, number> {
-  const nameOf = (ref: number) => data.nodes[ref]?.name ?? String(ref);
-  const depths: Record<string, number> = {};
-  for (const node of data.nodes) depths[node.name] = 0;
+  const nameOf = (ref: number) => data.nodes[ref]?.name ?? String(ref)
+  const depths: Record<string, number> = {}
+  for (const node of data.nodes) depths[node.name] = 0
 
   for (let pass = 0; pass < data.nodes.length; pass++) {
-    let changed = false;
+    let changed = false
     for (const link of data.links) {
-      const source = nameOf(link.source);
-      const target = nameOf(link.target);
-      if (depths[target] === undefined || depths[source] === undefined) continue;
+      const source = nameOf(link.source)
+      const target = nameOf(link.target)
+      if (depths[target] === undefined || depths[source] === undefined) continue
       if (depths[target] < depths[source] + 1) {
-        depths[target] = depths[source] + 1;
-        changed = true;
+        depths[target] = depths[source] + 1
+        changed = true
       }
     }
-    if (!changed) break;
+    if (!changed) break
   }
-  return depths;
+  return depths
 }
 
 // How long the whole cascade runs: whichever finishes last, the finalmost column
 // of nodes or the bands leaving the column before it.
 function introDuration(depths: Record<string, number>): number {
-  const maxDepth = Math.max(0, ...Object.values(depths));
+  const maxDepth = Math.max(0, ...Object.values(depths))
   return Math.max(
     maxDepth * INTRO_COLUMN_STAGGER + INTRO_NODE_GROW,
-    Math.max(0, maxDepth - 1) * INTRO_COLUMN_STAGGER + INTRO_LINK_DELAY + INTRO_LINK_DRAW,
-  );
+    Math.max(0, maxDepth - 1) * INTRO_COLUMN_STAGGER +
+      INTRO_LINK_DELAY +
+      INTRO_LINK_DRAW
+  )
 }
 
-const clamp01 = (value: number) => (value < 0 ? 0 : value > 1 ? 1 : value);
-const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const clamp01 = (value: number) => (value < 0 ? 0 : value > 1 ? 1 : value)
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3)
 
 // 0 → 1 for one node's grow, and for one link's draw. Both key off the source
 // node's column, so a band never starts before the node it leaves.
 function nodePhase(intro: IntroState, name: string): number {
-  const start = (intro.depths[name] ?? 0) * INTRO_COLUMN_STAGGER;
-  return easeOut(clamp01((intro.elapsed - start) / INTRO_NODE_GROW));
+  const start = (intro.depths[name] ?? 0) * INTRO_COLUMN_STAGGER
+  return easeOut(clamp01((intro.elapsed - start) / INTRO_NODE_GROW))
 }
 function linkPhase(intro: IntroState, sourceName: string): number {
-  const start = (intro.depths[sourceName] ?? 0) * INTRO_COLUMN_STAGGER + INTRO_LINK_DELAY;
-  return easeOut(clamp01((intro.elapsed - start) / INTRO_LINK_DRAW));
+  const start =
+    (intro.depths[sourceName] ?? 0) * INTRO_COLUMN_STAGGER + INTRO_LINK_DELAY
+  return easeOut(clamp01((intro.elapsed - start) / INTRO_LINK_DRAW))
 }
 
 // The axis a paint runs along — "y" for a node's vertical gradient, "x" for a
 // link's horizontal one, null for a flat color (which composes with either).
 function paintAxis(paint: Paint): "x" | "y" | null {
-  if (typeof paint === "string") return null;
-  const horizontal = Math.abs((paint.x2 ?? 0) - (paint.x ?? 0));
-  const vertical = Math.abs((paint.y2 ?? 0) - (paint.y ?? 0));
-  return horizontal >= vertical ? "x" : "y";
+  if (typeof paint === "string") return null
+  const horizontal = Math.abs((paint.x2 ?? 0) - (paint.x ?? 0))
+  const vertical = Math.abs((paint.y2 ?? 0) - (paint.y ?? 0))
+  return horizontal >= vertical ? "x" : "y"
 }
 
 function paintStops(paint: Paint): { offset: number; color: string }[] {
@@ -464,30 +477,36 @@ function paintStops(paint: Paint): { offset: number; color: string }[] {
     return [
       { offset: 0, color: paint },
       { offset: 1, color: paint },
-    ];
+    ]
   }
-  const stops = paint.colorStops ?? [];
-  if (stops.length === 0) return [{ offset: 0, color: GRAY }];
-  return stops.map((stop) => ({ offset: stop.offset, color: stop.color }));
+  const stops = paint.colorStops ?? []
+  if (stops.length === 0) return [{ offset: 0, color: GRAY }]
+  return stops.map((stop) => ({ offset: stop.offset, color: stop.color }))
 }
 
 // The paint's color at an arbitrary offset, so a window edge inserted between two
 // stops keeps the hue it interrupts.
-function sampleStops(stops: { offset: number; color: string }[], at: number): string {
-  const first = stops[0];
-  const last = stops[stops.length - 1];
-  if (!first) return GRAY;
-  if (at <= first.offset) return first.color;
-  if (at >= last.offset) return last.color;
+function sampleStops(
+  stops: { offset: number; color: string }[],
+  at: number
+): string {
+  const first = stops[0]
+  const last = stops[stops.length - 1]
+  if (!first) return GRAY
+  if (at <= first.offset) return first.color
+  if (at >= last.offset) return last.color
   for (let i = 1; i < stops.length; i++) {
-    const from = stops[i - 1];
-    const to = stops[i];
-    if (at > to.offset) continue;
-    const span = to.offset - from.offset;
-    if (span <= 1e-6) return to.color;
-    return echarts.color.lerp((at - from.offset) / span, [from.color, to.color]) || from.color;
+    const from = stops[i - 1]
+    const to = stops[i]
+    if (at > to.offset) continue
+    const span = to.offset - from.offset
+    if (span <= 1e-6) return to.color
+    return (
+      echarts.color.lerp((at - from.offset) / span, [from.color, to.color]) ||
+      from.color
+    )
   }
-  return last.color;
+  return last.color
 }
 
 // Multiply a paint's alpha by a trapezoid window along `axis`: transparent before
@@ -498,30 +517,33 @@ function sampleStops(stops: { offset: number; color: string }[], at: number): st
 function windowedPaint(
   paint: Paint,
   axis: "x" | "y",
-  edges: [number, number, number, number],
+  edges: [number, number, number, number]
 ): Paint | null {
-  const own = paintAxis(paint);
-  if (own !== null && own !== axis) return null;
+  const own = paintAxis(paint)
+  if (own !== null && own !== axis) return null
 
-  const stops = paintStops(paint);
+  const stops = paintStops(paint)
   const alphaAt = (offset: number) => {
-    if (offset <= edges[0] || offset >= edges[3]) return 0;
-    if (offset >= edges[1] && offset <= edges[2]) return 1;
-    if (offset < edges[1]) return (offset - edges[0]) / Math.max(1e-6, edges[1] - edges[0]);
-    return (edges[3] - offset) / Math.max(1e-6, edges[3] - edges[2]);
-  };
+    if (offset <= edges[0] || offset >= edges[3]) return 0
+    if (offset >= edges[1] && offset <= edges[2]) return 1
+    if (offset < edges[1])
+      return (offset - edges[0]) / Math.max(1e-6, edges[1] - edges[0])
+    return (edges[3] - offset) / Math.max(1e-6, edges[3] - edges[2])
+  }
 
-  const offsets = [...new Set([0, 1, ...stops.map((stop) => stop.offset), ...edges])]
+  const offsets = [
+    ...new Set([0, 1, ...stops.map((stop) => stop.offset), ...edges]),
+  ]
     .filter((offset) => offset >= 0 && offset <= 1)
-    .sort((a, b) => a - b);
+    .sort((a, b) => a - b)
   const windowed = offsets.map((offset) => ({
     offset,
     color: withAlpha(sampleStops(stops, offset), alphaAt(offset)),
-  }));
+  }))
 
   return axis === "x"
     ? new echarts.graphic.LinearGradient(0, 0, 1, 0, windowed)
-    : new echarts.graphic.LinearGradient(0, 0, 0, 1, windowed);
+    : new echarts.graphic.LinearGradient(0, 0, 0, 1, windowed)
 }
 
 // A node scaling up about its own centre: it starts at INTRO_NODE_SCALE_FROM of
@@ -529,19 +551,19 @@ function windowedPaint(
 // fade-in rides the same window (applied by the caller as itemStyle.opacity), so
 // the box scales and lightens together.
 function growPaint(paint: Paint, phase: number): Paint | null {
-  const half = (INTRO_NODE_SCALE_FROM + (1 - INTRO_NODE_SCALE_FROM) * phase) / 2;
+  const half = (INTRO_NODE_SCALE_FROM + (1 - INTRO_NODE_SCALE_FROM) * phase) / 2
   return windowedPaint(paint, "y", [
     0.5 - half - INTRO_FEATHER,
     0.5 - half,
     0.5 + half,
     0.5 + half + INTRO_FEATHER,
-  ]);
+  ])
 }
 
 // A band drawing from its source edge toward its target edge.
 function drawPaint(paint: Paint, phase: number): Paint | null {
-  const head = phase * (1 + INTRO_FEATHER);
-  return windowedPaint(paint, "x", [-2, -1, head - INTRO_FEATHER, head]);
+  const head = phase * (1 + INTRO_FEATHER)
+  return windowedPaint(paint, "x", [-2, -1, head - INTRO_FEATHER, head])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -551,36 +573,36 @@ function drawPaint(paint: Paint, phase: number): Paint | null {
 
 // The selected node plus every node one link away from it.
 function connectedNodeSet(data: SankeyData, selected: string): Set<string> {
-  const set = new Set<string>([selected]);
-  const selectedIdx = data.nodes.findIndex((node) => node.name === selected);
-  if (selectedIdx === -1) return set;
+  const set = new Set<string>([selected])
+  const selectedIdx = data.nodes.findIndex((node) => node.name === selected)
+  if (selectedIdx === -1) return set
 
   for (const link of data.links) {
     if (link.source === selectedIdx) {
-      const name = data.nodes[link.target]?.name;
-      if (name) set.add(name);
+      const name = data.nodes[link.target]?.name
+      if (name) set.add(name)
     } else if (link.target === selectedIdx) {
-      const name = data.nodes[link.source]?.name;
-      if (name) set.add(name);
+      const name = data.nodes[link.source]?.name
+      if (name) set.add(name)
     }
   }
-  return set;
+  return set
 }
 
 // Each node's total flow: outgoing sum, falling back to incoming for leaf nodes —
 // the same value the twin surfaces in labels, the tooltip, and `onSelectionChange`.
 function computeNodeValues(data: SankeyData): Record<string, number> {
-  const values: Record<string, number> = {};
+  const values: Record<string, number> = {}
   data.nodes.forEach((node, index) => {
-    let outgoing = 0;
-    let incoming = 0;
+    let outgoing = 0
+    let incoming = 0
     for (const link of data.links) {
-      if (link.source === index) outgoing += link.value;
-      if (link.target === index) incoming += link.value;
+      if (link.source === index) outgoing += link.value
+      if (link.target === index) incoming += link.value
     }
-    values[node.name] = outgoing > 0 ? outgoing : incoming;
-  });
-  return values;
+    values[node.name] = outgoing > 0 ? outgoing : incoming
+  })
+  return values
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -589,18 +611,25 @@ function computeNodeValues(data: SankeyData): Record<string, number> {
 // band. `center` may run outside [0, 1] so the window fully enters and exits.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function shimmerWindowStops(center: number, color: string, floor: number, peak: number) {
-  const half = LOADING_SHIMMER_BAND;
-  const feather = LOADING_SHIMMER_FEATHER;
+function shimmerWindowStops(
+  center: number,
+  color: string,
+  floor: number,
+  peak: number
+) {
+  const half = LOADING_SHIMMER_BAND
+  const feather = LOADING_SHIMMER_FEATHER
 
   const alphaAt = (x: number) => {
-    const dist = Math.abs(x - center);
-    if (dist <= half - feather) return peak;
-    if (dist >= half) return floor;
+    const dist = Math.abs(x - center)
+    if (dist <= half - feather) return peak
+    if (dist >= half) return floor
     // Sine-eased falloff — a linear ramp still reads as a hard cut.
-    const eased = Math.sin(((1 - (dist - (half - feather)) / feather) * Math.PI) / 2);
-    return floor + (peak - floor) * eased;
-  };
+    const eased = Math.sin(
+      ((1 - (dist - (half - feather)) / feather) * Math.PI) / 2
+    )
+    return floor + (peak - floor) * eased
+  }
 
   const offsets = [
     0,
@@ -612,15 +641,15 @@ function shimmerWindowStops(center: number, color: string, floor: number, peak: 
     1,
   ]
     .filter((x) => x >= 0 && x <= 1)
-    .sort((a, b) => a - b);
+    .sort((a, b) => a - b)
 
-  const stops: { offset: number; color: string }[] = [];
+  const stops: { offset: number; color: string }[] = []
   for (const offset of offsets) {
     if (stops.length === 0 || offset - stops[stops.length - 1].offset > 1e-4) {
-      stops.push({ offset, color: withAlpha(color, alphaAt(offset)) });
+      stops.push({ offset, color: withAlpha(color, alphaAt(offset)) })
     }
   }
-  return stops;
+  return stops
 }
 
 // Tooltip HTML primitives (roundnessClass, tooltipVariantClass, tooltipIndicatorHtml,
@@ -637,50 +666,51 @@ function shimmerWindowStops(center: number, color: string, floor: number, peak: 
 // ─────────────────────────────────────────────────────────────────────────────
 
 type OptionBuildContext = {
-  data: SankeyData;
-  config: ChartConfig;
-  nodeConfig: NodeSlot;
-  nodeLabel: NodeLabelSlot | null;
-  linkConfig: LinkSlot;
-  tooltipSlot: TooltipSlot;
-  selectedNode: string | null;
-  nodeWidth: number;
-  nodePadding: number;
-  linkCurvature: number;
-  iterations: number;
-  align: "left" | "justify";
-  isLoading: boolean;
-  resolved: ResolvedColors;
-  nodeValues: Record<string, number>;
-  outsideLabels: boolean; // reserves right padding for outside labels
-  intro: IntroState | null; // mid-entrance cascade, null once the diagram is fully drawn
-};
+  data: SankeyData
+  config: ChartConfig
+  nodeConfig: NodeSlot
+  nodeLabel: NodeLabelSlot | null
+  linkConfig: LinkSlot
+  tooltipSlot: TooltipSlot
+  selectedNode: string | null
+  nodeWidth: number
+  nodePadding: number
+  linkCurvature: number
+  iterations: number
+  align: "left" | "justify"
+  isLoading: boolean
+  resolved: ResolvedColors
+  nodeValues: Record<string, number>
+  outsideLabels: boolean // reserves right padding for outside labels
+  intro: IntroState | null // mid-entrance cascade, null once the diagram is fully drawn
+}
 
 // The node label config, shared by every node. Two-line rich text when values are
 // shown; per-node opacity (for selection dimming) is applied on the node items.
 function buildNodeLabel(ctx: OptionBuildContext): SankeySeriesOption["label"] {
-  const { nodeLabel, config, nodeValues, resolved } = ctx;
-  const position = nodeLabel?.position;
+  const { nodeLabel, config, nodeValues, resolved } = ctx
+  const position = nodeLabel?.position
 
   // No <NodeLabel>, or one with no position, shows nothing — Recharts parity.
-  if (position !== "inside" && position !== "outside") return { show: false };
+  if (position !== "inside" && position !== "outside") return { show: false }
 
-  const { tokens } = resolved;
-  const inside = position === "inside";
-  const showValues = nodeLabel?.showValues ?? false;
-  const format = nodeLabel?.valueFormatter ?? ((value: number) => value.toLocaleString());
+  const { tokens } = resolved
+  const inside = position === "inside"
+  const showValues = nodeLabel?.showValues ?? false
+  const format =
+    nodeLabel?.valueFormatter ?? ((value: number) => value.toLocaleString())
 
   const labelOf = (name: string) => {
-    const label = config[name]?.label;
-    return typeof label === "string" ? label : name;
-  };
+    const label = config[name]?.label
+    return typeof label === "string" ? label : name
+  }
 
   const formatter = (params: unknown): string => {
-    const name = String((params as { name?: string | number }).name ?? "");
-    const nameText = labelOf(name);
-    if (!showValues) return `{name|${nameText}}`;
-    return `{name|${nameText}}\n{value|${format(nodeValues[name] ?? 0)}}`;
-  };
+    const name = String((params as { name?: string | number }).name ?? "")
+    const nameText = labelOf(name)
+    if (!showValues) return `{name|${nameText}}`
+    return `{name|${nameText}}\n{value|${format(nodeValues[name] ?? 0)}}`
+  }
 
   return {
     show: true,
@@ -706,7 +736,7 @@ function buildNodeLabel(ctx: OptionBuildContext): SankeySeriesOption["label"] {
     // the plate in buildSankeySeries (a full-rect background wash with the node's
     // color showing only as a rounded rim), so the text sits centered directly on
     // that plate — matching the twin, where the plate spans the entire node rect.
-  };
+  }
 }
 
 function buildSankeySeries(ctx: OptionBuildContext): SankeySeriesOption {
@@ -724,33 +754,35 @@ function buildSankeySeries(ctx: OptionBuildContext): SankeySeriesOption {
     resolved,
     outsideLabels,
     intro,
-  } = ctx;
-  const { tokens, series: slotsByName } = resolved;
-  const hasSelection = selectedNode !== null;
-  const connected = hasSelection ? connectedNodeSet(data, selectedNode) : null;
+  } = ctx
+  const { tokens, series: slotsByName } = resolved
+  const hasSelection = selectedNode !== null
+  const connected = hasSelection ? connectedNodeSet(data, selectedNode) : null
   // With inside labels the node is rebuilt as a card: a translucent background
   // plate fills the whole rect and the node's own color/gradient shows only as a
   // rounded rim (the colored card behind it — the __sankey-plate series — tints
   // through the plate). Mirrors the twin's full-rect inset plate + 1px colored edge.
-  const insideLabels = ctx.nodeLabel?.position === "inside";
+  const insideLabels = ctx.nodeLabel?.position === "inside"
 
   // Nodes with no incoming link start the diagram, so an outside label reads on
   // their LEFT; anything downstream keeps its label on the right. Without the split
   // every label sits to the right of its node, which drops the first column's text
   // straight onto its own outgoing bands.
   const targetNames = new Set(
-    data.links.map((link) => data.nodes[link.target]?.name ?? String(link.target)),
-  );
+    data.links.map(
+      (link) => data.nodes[link.target]?.name ?? String(link.target)
+    )
+  )
 
   const nodes: SankeyNodeItem[] = data.nodes.map((node) => {
-    const slots = slotsByName[node.name] ?? [GRAY];
-    const dimmed = connected ? !connected.has(node.name) : false;
+    const slots = slotsByName[node.name] ?? [GRAY]
+    const dimmed = connected ? !connected.has(node.name) : false
     // Mid-intro the box scales up about its centre and fades in together; the
     // label just fades with it (rich text has no partial reveal).
-    const phase = intro ? nodePhase(intro, node.name) : 1;
-    const fill = nodeGradient(slots);
-    const grown = phase < 1 ? growPaint(fill, phase) : fill;
-    const nodeAlpha = (dimmed ? NODE_DIM_OPACITY : NODE_FILL_OPACITY) * phase;
+    const phase = intro ? nodePhase(intro, node.name) : 1
+    const fill = nodeGradient(slots)
+    const grown = phase < 1 ? growPaint(fill, phase) : fill
+    const nodeAlpha = (dimmed ? NODE_DIM_OPACITY : NODE_FILL_OPACITY) * phase
 
     return {
       name: node.name,
@@ -779,21 +811,27 @@ function buildSankeySeries(ctx: OptionBuildContext): SankeySeriesOption {
           ? { position: "left" as const, align: "right" as const }
           : {}),
       },
-    };
-  });
+    }
+  })
 
   const links: SankeyEdgeItem[] = data.links.map((link) => {
-    const source = data.nodes[link.source]?.name ?? String(link.source);
-    const target = data.nodes[link.target]?.name ?? String(link.target);
-    const sourceSlots = slotsByName[source] ?? [GRAY];
-    const targetSlots = slotsByName[target] ?? [GRAY];
+    const source = data.nodes[link.source]?.name ?? String(link.source)
+    const target = data.nodes[link.target]?.name ?? String(link.target)
+    const sourceSlots = slotsByName[source] ?? [GRAY]
+    const targetSlots = slotsByName[target] ?? [GRAY]
     // Connected = nothing selected, or this link touches the selected node.
-    const isConnected = !hasSelection || source === selectedNode || target === selectedNode;
+    const isConnected =
+      !hasSelection || source === selectedNode || target === selectedNode
     // Mid-intro the band is windowed along its own bounding box, so it draws out
     // of the source node rather than fading in place.
-    const phase = intro ? linkPhase(intro, source) : 1;
-    const band = edgeColor(linkConfig.variant, sourceSlots, targetSlots, tokens.foreground);
-    const drawn = phase < 1 ? drawPaint(band, phase) : band;
+    const phase = intro ? linkPhase(intro, source) : 1
+    const band = edgeColor(
+      linkConfig.variant,
+      sourceSlots,
+      targetSlots,
+      tokens.foreground
+    )
+    const drawn = phase < 1 ? drawPaint(band, phase) : band
 
     return {
       source,
@@ -801,10 +839,12 @@ function buildSankeySeries(ctx: OptionBuildContext): SankeySeriesOption {
       value: link.value,
       lineStyle: {
         color: drawn ?? band,
-        opacity: (isConnected ? LINK_FILL_OPACITY : LINK_DIM_OPACITY) * (drawn ? 1 : phase),
+        opacity:
+          (isConnected ? LINK_FILL_OPACITY : LINK_DIM_OPACITY) *
+          (drawn ? 1 : phase),
       },
-    };
-  });
+    }
+  })
 
   return {
     id: "__sankey",
@@ -827,7 +867,7 @@ function buildSankeySeries(ctx: OptionBuildContext): SankeySeriesOption {
     label: buildNodeLabel(ctx),
     data: nodes,
     links,
-  };
+  }
 }
 
 // The colored card drawn UNDER the inside-label plate. With inside labels the
@@ -838,7 +878,9 @@ function buildSankeySeries(ctx: OptionBuildContext): SankeySeriesOption {
 // dark), matching the Recharts twin's colored rect beneath its white/black wash.
 // Returns null unless inside labels are active, so the extra series is only paid
 // for on demand.
-function buildInsidePlateSeries(ctx: OptionBuildContext): SankeySeriesOption | null {
+function buildInsidePlateSeries(
+  ctx: OptionBuildContext
+): SankeySeriesOption | null {
   const {
     data,
     nodeConfig,
@@ -852,21 +894,21 @@ function buildInsidePlateSeries(ctx: OptionBuildContext): SankeySeriesOption | n
     resolved,
     outsideLabels,
     intro,
-  } = ctx;
-  if (nodeLabel?.position !== "inside") return null;
+  } = ctx
+  if (nodeLabel?.position !== "inside") return null
 
-  const { series: slotsByName } = resolved;
-  const hasSelection = selectedNode !== null;
-  const connected = hasSelection ? connectedNodeSet(data, selectedNode) : null;
+  const { series: slotsByName } = resolved
+  const hasSelection = selectedNode !== null
+  const connected = hasSelection ? connectedNodeSet(data, selectedNode) : null
 
   const nodes: SankeyNodeItem[] = data.nodes.map((node) => {
-    const slots = slotsByName[node.name] ?? [GRAY];
-    const dimmed = connected ? !connected.has(node.name) : false;
+    const slots = slotsByName[node.name] ?? [GRAY]
+    const dimmed = connected ? !connected.has(node.name) : false
     // Grows in step with the real node above it — the card and its plate are one
     // element to the eye, so they must open together.
-    const phase = intro ? nodePhase(intro, node.name) : 1;
-    const fill = nodeGradient(slots);
-    const grown = phase < 1 ? growPaint(fill, phase) : fill;
+    const phase = intro ? nodePhase(intro, node.name) : 1
+    const fill = nodeGradient(slots)
+    const grown = phase < 1 ? growPaint(fill, phase) : fill
     return {
       name: node.name,
       itemStyle: {
@@ -876,8 +918,8 @@ function buildInsidePlateSeries(ctx: OptionBuildContext): SankeySeriesOption | n
         borderRadius: nodeConfig.radius,
       },
       label: { show: false },
-    };
-  });
+    }
+  })
 
   // Links exist only so the layout matches the main series pixel-exact; they are
   // fully transparent here — the real bands are drawn by the __sankey series.
@@ -886,7 +928,7 @@ function buildInsidePlateSeries(ctx: OptionBuildContext): SankeySeriesOption | n
     target: data.nodes[link.target]?.name ?? String(link.target),
     value: link.value,
     lineStyle: { opacity: 0 },
-  }));
+  }))
 
   return {
     id: "__sankey-plate",
@@ -907,64 +949,70 @@ function buildInsidePlateSeries(ctx: OptionBuildContext): SankeySeriesOption | n
     lineStyle: { curveness: linkCurvature },
     data: nodes,
     links,
-  };
+  }
 }
 
 // Tooltip HTML builder, closed over the build context. A sankey fires item events
 // for both nodes (`dataType: "node"`) and links (`dataType: "edge"`); the
 // formatter renders the right row for each.
 function createTooltipFormatter(ctx: OptionBuildContext) {
-  const { config, nodeValues, tooltipSlot } = ctx;
+  const { config, nodeValues, tooltipSlot } = ctx
 
   const labelOf = (name: string) => {
-    const label = config[name]?.label;
-    return typeof label === "string" ? label : name;
-  };
-  const colorsOf = (name: string) => (config[name] ? getColorsCount(config[name]) : 1);
+    const label = config[name]?.label
+    return typeof label === "string" ? label : name
+  }
+  const colorsOf = (name: string) =>
+    config[name] ? getColorsCount(config[name]) : 1
   // A sankey tooltip carries no axis title — each hovered node/link surfaces a
   // single indicator+label+value row. The shared tooltipShell always renders a
   // title slot, so the outer surface stays a chart-local, title-less wrapper
   // (reusing the shared roundness/variant classes); the row itself is the shared
   // tooltipRow with the shared indicator swatch and no per-row dim.
   const wrap = (body: string) =>
-    `<div class="grid min-w-32 items-start gap-1.5 border border-border/50 px-2.5 py-1.5 text-xs shadow-xl ${roundnessClass[tooltipSlot.roundness]} ${tooltipVariantClass[tooltipSlot.variant]}"><div class="grid gap-1.5">${body}</div></div>`;
+    `<div class="grid min-w-32 items-start gap-1.5 border border-border/50 px-2.5 py-1.5 text-xs shadow-xl ${roundnessClass[tooltipSlot.roundness]} ${tooltipVariantClass[tooltipSlot.variant]}"><div class="grid gap-1.5">${body}</div></div>`
 
   return (params: unknown): string => {
     const p = params as {
-      dataType?: string;
-      name?: string;
-      data?: { source?: string | number; target?: string | number; value?: number };
-    };
+      dataType?: string
+      name?: string
+      data?: {
+        source?: string | number
+        target?: string | number
+        value?: number
+      }
+    }
 
     if (p.dataType === "edge") {
-      const source = String(p.data?.source ?? "");
-      const target = String(p.data?.target ?? "");
-      const value = typeof p.data?.value === "number" ? p.data.value.toLocaleString() : "";
+      const source = String(p.data?.source ?? "")
+      const target = String(p.data?.target ?? "")
+      const value =
+        typeof p.data?.value === "number" ? p.data.value.toLocaleString() : ""
       return wrap(
         tooltipRow({
           indicatorHtml: tooltipIndicatorHtml(source, colorsOf(source)),
           labelText: `${labelOf(source)} → ${labelOf(target)}`,
           valueText: value,
           dimmed: "",
-        }),
-      );
+        })
+      )
     }
 
-    const name = String(p.name ?? "");
-    const value = (nodeValues[name] ?? 0).toLocaleString();
+    const name = String(p.name ?? "")
+    const value = (nodeValues[name] ?? 0).toLocaleString()
     return wrap(
       tooltipRow({
         indicatorHtml: tooltipIndicatorHtml(name, colorsOf(name)),
         labelText: labelOf(name),
         valueText: value,
         dimmed: "",
-      }),
-    );
-  };
+      })
+    )
+  }
 }
 
 function buildTooltipOption(ctx: OptionBuildContext): TooltipComponentOption {
-  const { tooltipSlot, isLoading } = ctx;
+  const { tooltipSlot, isLoading } = ctx
   return {
     show: tooltipSlot.present && !isLoading,
     trigger: "item",
@@ -980,15 +1028,15 @@ function buildTooltipOption(ctx: OptionBuildContext): TooltipComponentOption {
     // than tooltipBaseOption, which is trigger:"axis" only.
     position: resolveTooltipPosition(tooltipSlot.position),
     formatter: createTooltipFormatter(ctx),
-  };
+  }
 }
 
 // Loading skeleton — a fixed gray sankey, invisible until the first shimmer tick
 // tints it. Node fills and link fills are set to fully-transparent foreground so
 // there is no flash before the rAF loop positions the sweep.
 function buildLoadingOption(ctx: OptionBuildContext): EChartsOption {
-  const { resolved } = ctx;
-  const transparent = withAlpha(resolved.tokens.foreground, 0);
+  const { resolved } = ctx
+  const transparent = withAlpha(resolved.tokens.foreground, 0)
 
   return {
     animation: false,
@@ -1014,7 +1062,7 @@ function buildLoadingOption(ctx: OptionBuildContext): EChartsOption {
         links: SKELETON_LINKS,
       },
     ],
-  };
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1025,19 +1073,21 @@ function buildLoadingOption(ctx: OptionBuildContext): EChartsOption {
 // ─────────────────────────────────────────────────────────────────────────────
 
 type LiveState = {
-  resolved: ResolvedColors | null; // colors read off the live DOM — feeds builds and the shimmer
-  hasRevealed: boolean; // the intro cascade already played on this chart instance
-  intro: IntroState | null; // current cascade frame, read by every build while it runs
+  resolved: ResolvedColors | null // colors read off the live DOM — feeds builds and the shimmer
+  hasRevealed: boolean // the intro cascade already played on this chart instance
+  intro: IntroState | null // current cascade frame, read by every build while it runs
   // Latest callbacks/flags for the imperative ECharts click handler.
   handlers: {
-    onSelectionChange?: (selection: { dataKey: string; value: number } | null) => void;
-    isNodeClickable: boolean;
-    nodeValues: Record<string, number>;
-  };
+    onSelectionChange?: (
+      selection: { dataKey: string; value: number } | null
+    ) => void
+    isNodeClickable: boolean
+    nodeValues: Record<string, number>
+  }
   // Update-style re-push for paths that bypass React entirely (theme flips,
   // resizes) — set by the sync effect.
-  repush: () => void;
-};
+  repush: () => void
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Component
@@ -1069,12 +1119,12 @@ export function EChartsSankeyChart({
   animationType = "default",
   chartOptions,
 }: EChartsSankeyChartProps) {
-  const rawId = useId();
-  const chartId = `chart-${rawId.replace(/:/g, "")}`;
+  const rawId = useId()
+  const chartId = `chart-${rawId.replace(/:/g, "")}`
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mountRef = useRef<HTMLDivElement>(null);
-  const echartsRef = useRef<EChartsInstance | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mountRef = useRef<HTMLDivElement>(null)
+  const echartsRef = useRef<EChartsInstance | null>(null)
 
   // The single imperative surface (see LiveState). `resolved` lives here rather
   // than in state: as state it would force an extra render pass and an effect
@@ -1090,49 +1140,51 @@ export function EChartsSankeyChart({
       nodeValues: {},
     },
     repush: () => {},
-  }).current;
+  }).current
 
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = useReducedMotion()
 
-  const [selectedNode, setSelectedNode] = useState<string | null>(defaultSelectedNode);
+  const [selectedNode, setSelectedNode] = useState<string | null>(
+    defaultSelectedNode
+  )
 
   // ── Declarative config, collected from children by reference ─────────────────
-  const collected = useMemo(() => collectConfig(children), [children]);
-  const { nodeConfig, nodeLabel, linkConfig, tooltip: tooltipSlot } = collected;
+  const collected = useMemo(() => collectConfig(children), [children])
+  const { nodeConfig, nodeLabel, linkConfig, tooltip: tooltipSlot } = collected
 
-  const nodeValues = useMemo(() => computeNodeValues(data), [data]);
-  const outsideLabels = nodeLabel?.position === "outside";
+  const nodeValues = useMemo(() => computeNodeValues(data), [data])
+  const outsideLabels = nodeLabel?.position === "outside"
 
-  const css = useMemo(() => buildChartCss(chartId, config), [chartId, config]);
+  const css = useMemo(() => buildChartCss(chartId, config), [chartId, config])
 
   // Node names double as the color keys — resolve `--color-{name}-{n}` for each.
-  const nodeNames = useMemo(() => data.nodes.map((node) => node.name), [data]);
+  const nodeNames = useMemo(() => data.nodes.map((node) => node.name), [data])
 
   // Refresh the click handler's snapshot of the latest callbacks/flags every render.
   live.handlers = {
     onSelectionChange,
     isNodeClickable: nodeConfig.isClickable,
     nodeValues,
-  };
+  }
 
   const toggleSelection = useCallback(
     (name: string) => {
       setSelectedNode((prev) => {
-        const next = prev === name ? null : name;
-        const { onSelectionChange: cb, nodeValues: values } = live.handlers;
-        cb?.(next === null ? null : { dataKey: next, value: values[next] ?? 0 });
-        return next;
-      });
+        const next = prev === name ? null : name
+        const { onSelectionChange: cb, nodeValues: values } = live.handlers
+        cb?.(next === null ? null : { dataKey: next, value: values[next] ?? 0 })
+        return next
+      })
     },
-    [live],
-  );
+    [live]
+  )
 
   // ── Option builder ───────────────────────────────────────────────────────────
   // Thin orchestrator over the pure builders above: snapshot the imperative
   // surface into an OptionBuildContext, then assemble.
   const buildOption = useCallback((): EChartsOption => {
-    const resolved = live.resolved;
-    if (!resolved) return {};
+    const resolved = live.resolved
+    if (!resolved) return {}
 
     const ctx: OptionBuildContext = {
       data,
@@ -1152,22 +1204,22 @@ export function EChartsSankeyChart({
       nodeValues,
       outsideLabels,
       intro: live.intro,
-    };
+    }
 
-    if (isLoading) return buildLoadingOption(ctx);
+    if (isLoading) return buildLoadingOption(ctx)
 
     // Draw order, bottom → top: the colored card under inside-label plates, then
     // the real sankey on top.
-    const series: SankeySeriesOption[] = [];
-    const plateSeries = buildInsidePlateSeries(ctx);
-    if (plateSeries) series.push(plateSeries);
-    series.push(buildSankeySeries(ctx));
+    const series: SankeySeriesOption[] = []
+    const plateSeries = buildInsidePlateSeries(ctx)
+    if (plateSeries) series.push(plateSeries)
+    series.push(buildSankeySeries(ctx))
 
     return {
       animation: false,
       tooltip: buildTooltipOption(ctx),
       series,
-    };
+    }
   }, [
     live,
     data,
@@ -1185,71 +1237,74 @@ export function EChartsSankeyChart({
     isLoading,
     nodeValues,
     outsideLabels,
-  ]);
+  ])
 
   // ── Init + resize + theme observer (once) ────────────────────────────────────
   useEffect(() => {
-    const mount = mountRef.current;
-    const container = containerRef.current;
-    if (!mount || !container) return;
+    const mount = mountRef.current
+    const container = containerRef.current
+    if (!mount || !container) return
 
-    const chart = echarts.init(mount);
-    echartsRef.current = chart;
+    const chart = echarts.init(mount)
+    echartsRef.current = chart
 
     const resizeObserver = new ResizeObserver(() => {
       // Observers always fire once right after observe(). Repushing on that no-op
       // fire would land one frame into the intro and stomp the reveal — only
       // react when the renderer size actually changed.
-      if (mount.clientWidth === chart.getWidth() && mount.clientHeight === chart.getHeight()) {
-        return;
+      if (
+        mount.clientWidth === chart.getWidth() &&
+        mount.clientHeight === chart.getHeight()
+      ) {
+        return
       }
-      chart.resize();
-      live.repush();
-    });
-    resizeObserver.observe(mount);
+      chart.resize()
+      live.repush()
+    })
+    resizeObserver.observe(mount)
 
     // Light/dark flips change no React state — re-resolve and push directly.
     const themeObserver = new MutationObserver(() => {
-      live.repush();
-    });
+      live.repush()
+    })
     themeObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class"],
-    });
+    })
 
     // Clicking a node toggles its selection. Sankey click params carry
     // `dataType: "node"` (vs "edge" for links); only nodes are selectable, and
     // only when <Node isClickable> is set.
     chart.on("click", (params) => {
-      const { isNodeClickable } = live.handlers;
-      if (!isNodeClickable) return;
-      const p = params as { dataType?: string; name?: string };
-      if (p.dataType !== "node") return;
-      if (typeof p.name === "string") toggleSelection(p.name);
-    });
+      const { isNodeClickable } = live.handlers
+      if (!isNodeClickable) return
+      const p = params as { dataType?: string; name?: string }
+      if (p.dataType !== "node") return
+      if (typeof p.name === "string") toggleSelection(p.name)
+    })
 
     return () => {
-      resizeObserver.disconnect();
-      themeObserver.disconnect();
-      chart.dispose();
-      echartsRef.current = null;
+      resizeObserver.disconnect()
+      themeObserver.disconnect()
+      chart.dispose()
+      echartsRef.current = null
       // The reveal guard belongs to the chart instance it guarded. Without this
       // reset, StrictMode's dev-only mount→unmount→remount plays the entrance on
       // the throwaway instance and the surviving one renders without it.
-      live.hasRevealed = false;
-    };
+      live.hasRevealed = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   // ── Sync ECharts with props/theme/selection — resolve, build, push ────────────
   useEffect(() => {
-    const chart = echartsRef.current;
-    const container = containerRef.current;
-    if (!chart || !container) return;
+    const chart = echartsRef.current
+    const container = containerRef.current
+    if (!chart || !container) return
 
     // Colors come from the <style> committed just before this effect ran — read
     // them here, right before the push, rather than round-tripping through state.
-    live.resolved = resolveColors(container, config, nodeNames);
+    live.resolved = resolveColors(container, config, nodeNames)
 
     // ECharts' own animation stays off throughout: the entrance is painted by the
     // option itself (windowed gradients, below), so there is nothing left for the
@@ -1257,16 +1312,16 @@ export function EChartsSankeyChart({
     // replaces. Intro frames merge rather than replace, so the chart keeps its
     // views instead of rebuilding them 60 times a second.
     const push = (mergeOnly: boolean) => {
-      const option = buildOption();
-      const merged = chartOptions ? { ...option, ...chartOptions } : option;
-      Object.assign(merged, { animation: false, animationDurationUpdate: 0 });
+      const option = buildOption()
+      const merged = chartOptions ? { ...option, ...chartOptions } : option
+      Object.assign(merged, { animation: false, animationDurationUpdate: 0 })
       // chartOptions is an untyped escape hatch — the spread erases the option's
       // shape, so re-assert it. The only cast in the file.
       chart.setOption(
         merged as EChartsOption,
-        mergeOnly ? { lazyUpdate: true, silent: true } : { notMerge: true },
-      );
-    };
+        mergeOnly ? { lazyUpdate: true, silent: true } : { notMerge: true }
+      )
+    }
 
     // Intro cascade, played once per chart instance: columns of nodes grow out of
     // their centres left to right, each column's bands drawing toward the next as
@@ -1274,31 +1329,34 @@ export function EChartsSankeyChart({
     // `intro` null, so it applies instantly instead of replaying. A loading cycle
     // re-arms it: the Recharts twin remounts its diagram after loading and replays
     // the intro, so data → loading → data draws in again here too.
-    if (isLoading) live.hasRevealed = false;
-    const shouldReveal = !live.hasRevealed && !isLoading;
-    if (shouldReveal) live.hasRevealed = true;
+    if (isLoading) live.hasRevealed = false
+    const shouldReveal = !live.hasRevealed && !isLoading
+    if (shouldReveal) live.hasRevealed = true
     const revealEnabled =
-      animation && shouldReveal && animationType !== "none" && !shouldReduceMotion;
+      animation &&
+      shouldReveal &&
+      animationType !== "none" &&
+      !shouldReduceMotion
 
-    let raf = 0;
+    let raf = 0
     if (revealEnabled) {
-      const depths = computeNodeDepths(data);
-      const duration = introDuration(depths);
-      live.intro = { elapsed: 0, depths };
-      push(false);
+      const depths = computeNodeDepths(data)
+      const duration = introDuration(depths)
+      live.intro = { elapsed: 0, depths }
+      push(false)
 
-      const start = performance.now();
+      const start = performance.now()
       const tick = (now: number) => {
-        const elapsed = now - start;
-        const done = elapsed >= duration;
-        live.intro = done ? null : { elapsed, depths };
-        push(true);
-        if (!done) raf = requestAnimationFrame(tick);
-      };
-      raf = requestAnimationFrame(tick);
+        const elapsed = now - start
+        const done = elapsed >= duration
+        live.intro = done ? null : { elapsed, depths }
+        push(true)
+        if (!done) raf = requestAnimationFrame(tick)
+      }
+      raf = requestAnimationFrame(tick)
     } else {
-      live.intro = null;
-      push(false);
+      live.intro = null
+      push(false)
     }
 
     // Theme flips and resizes re-enter here without touching React: re-read the
@@ -1306,16 +1364,16 @@ export function EChartsSankeyChart({
     // update-style option. Mid-intro that push carries the current cascade frame,
     // so a theme flip retints the entrance instead of interrupting it.
     live.repush = () => {
-      live.resolved = resolveColors(container, config, nodeNames);
-      push(false);
-    };
+      live.resolved = resolveColors(container, config, nodeNames)
+      push(false)
+    }
 
     // Anything that re-runs this effect (a selection, a prop change) ends an
     // in-flight cascade — the next push draws the finished diagram.
     return () => {
-      cancelAnimationFrame(raf);
-      live.intro = null;
-    };
+      cancelAnimationFrame(raf)
+      live.intro = null
+    }
   }, [
     live,
     buildOption,
@@ -1327,32 +1385,33 @@ export function EChartsSankeyChart({
     shouldReduceMotion,
     config,
     nodeNames,
-  ]);
+  ])
 
   // ── Loading shimmer — rAF sweeps a bright band across the fixed skeleton ──────
   useEffect(() => {
-    const chart = echartsRef.current;
-    if (!chart || !isLoading) return;
+    const chart = echartsRef.current
+    if (!chart || !isLoading) return
 
-    let raf = 0;
-    const start = performance.now();
+    let raf = 0
+    const start = performance.now()
     const tick = (now: number) => {
-      const phase = ((((now - start) / LOADING_ANIMATION_DURATION) % 1) + 1) % 1;
+      const phase = ((((now - start) / LOADING_ANIMATION_DURATION) % 1) + 1) % 1
 
       // Read tokens per frame, so a theme flip mid-loading retints the shimmer.
-      const foreground = live.resolved?.tokens.foreground ?? GRAY;
-      const w = chart.getWidth();
-      const h = chart.getHeight();
+      const foreground = live.resolved?.tokens.foreground ?? GRAY
+      const w = chart.getWidth()
+      const h = chart.getHeight()
       if (!w || !h) {
-        raf = requestAnimationFrame(tick);
-        return;
+        raf = requestAnimationFrame(tick)
+        return
       }
       // Sweep the clip window from fully off-screen left to fully off-screen
       // right, leaned 45°. ABSOLUTE pixel coordinates (global gradient) are
       // shared by nodes and links, so every element lights up as the same band
       // passes its x-position — nodes in a column brighten together.
-      const maxT = (w + h) / (2 * w);
-      const center = phase * (maxT + 2 * LOADING_SHIMMER_BAND) - LOADING_SHIMMER_BAND;
+      const maxT = (w + h) / (2 * w)
+      const center =
+        phase * (maxT + 2 * LOADING_SHIMMER_BAND) - LOADING_SHIMMER_BAND
       const clip = (floor: number, peak: number) =>
         new echarts.graphic.LinearGradient(
           0,
@@ -1360,14 +1419,17 @@ export function EChartsSankeyChart({
           w,
           w,
           shimmerWindowStops(center, foreground, floor, peak),
-          true,
-        );
+          true
+        )
       chart.setOption(
         {
           series: [
             {
               id: "__loading",
-              itemStyle: { color: clip(LOADING_NODE_FLOOR, LOADING_NODE_PEAK), borderWidth: 0 },
+              itemStyle: {
+                color: clip(LOADING_NODE_FLOOR, LOADING_NODE_PEAK),
+                borderWidth: 0,
+              },
               lineStyle: {
                 color: clip(LOADING_LINK_FLOOR, LOADING_LINK_PEAK),
                 curveness: DEFAULT_LINK_CURVATURE,
@@ -1375,13 +1437,13 @@ export function EChartsSankeyChart({
             },
           ],
         },
-        { silent: true, lazyUpdate: true },
-      );
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [live, isLoading]);
+        { silent: true, lazyUpdate: true }
+      )
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [live, isLoading])
 
   return (
     <div
@@ -1401,18 +1463,18 @@ export function EChartsSankeyChart({
             initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="text-primary bg-background flex items-center justify-center gap-2 rounded-md border px-2 py-0.5 text-sm"
+            className="flex items-center justify-center gap-2 rounded-md border bg-background px-2 py-0.5 text-sm text-primary"
           >
-            <div className="border-border border-t-primary h-3 w-3 animate-spin rounded-full border" />
+            <div className="h-3 w-3 animate-spin rounded-full border border-border border-t-primary" />
             <span>Loading</span>
           </motion.div>
         </div>
       )}
     </div>
-  );
+  )
 }
 
-EChartsSankeyChart.Node = Node;
-EChartsSankeyChart.NodeLabel = NodeLabel;
-EChartsSankeyChart.Link = Link;
-EChartsSankeyChart.Tooltip = Tooltip;
+EChartsSankeyChart.Node = Node
+EChartsSankeyChart.NodeLabel = NodeLabel
+EChartsSankeyChart.Link = Link
+EChartsSankeyChart.Tooltip = Tooltip

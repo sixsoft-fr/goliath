@@ -64,10 +64,13 @@ test("liste les utilisateurs et envoie les paramètres spatie (query + tri)", as
   await mockUsers(page, (route) => {
     urls.push(route.request().url())
     route.fulfill({
-      json: paginated([
-        user(1, "Alice Martin", "alice@example.io"),
-        user(2, "Bob Durand", "bob@example.io"),
-      ], 2),
+      json: paginated(
+        [
+          user(1, "Alice Martin", "alice@example.io"),
+          user(2, "Bob Durand", "bob@example.io"),
+        ],
+        2
+      ),
     })
   })
 
@@ -87,7 +90,7 @@ test("liste les utilisateurs et envoie les paramètres spatie (query + tri)", as
 
   // Recherche → query envoyée + reset page 1.
   const searchReq = page.waitForRequest(
-    (r) => /\/api\/users/.test(r.url()) && r.url().includes("query=Alice"),
+    (r) => /\/api\/users/.test(r.url()) && r.url().includes("query=Alice")
   )
   await page.getByTestId("datatable-search").fill("Alice")
   const req = await searchReq
@@ -95,7 +98,7 @@ test("liste les utilisateurs et envoie les paramètres spatie (query + tri)", as
 
   // Tri par name (asc) → s=name.
   const sortReq = page.waitForRequest(
-    (r) => /\/api\/users/.test(r.url()) && /[?&]s=name(&|$)/.test(r.url()),
+    (r) => /\/api\/users/.test(r.url()) && /[?&]s=name(&|$)/.test(r.url())
   )
   await page.getByTestId("datatable-sort-name").click()
   await sortReq
@@ -105,7 +108,7 @@ test("liste les utilisateurs et envoie les paramètres spatie (query + tri)", as
   // ("Importing a module script failed") quand plusieurs navigateurs le
   // compilent à froid en parallèle. Absent en CI (workers=1) et en prod (build).
   const appErrors = pageErrors.filter(
-    (e) => !/Importing a module script failed/i.test(e),
+    (e) => !/Importing a module script failed/i.test(e)
   )
   expect(appErrors).toEqual([])
 })
@@ -125,7 +128,7 @@ test("la pagination suivante envoie page=2", async ({ page }) => {
   await mockUsers(page, (route) =>
     route.fulfill({
       json: paginated([user(1, "Alice Martin", "alice@example.io")], 25, 3),
-    }),
+    })
   )
 
   await login(page)
@@ -133,7 +136,7 @@ test("la pagination suivante envoie page=2", async ({ page }) => {
   await expect(page.getByText("Alice Martin")).toBeVisible({ timeout: 15000 })
 
   const nextReq = page.waitForRequest(
-    (r) => /\/api\/users/.test(r.url()) && /[?&]page=2(&|$)/.test(r.url()),
+    (r) => /\/api\/users/.test(r.url()) && /[?&]page=2(&|$)/.test(r.url())
   )
   await page.getByTestId("datatable-next").click()
   await nextReq

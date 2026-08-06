@@ -15,9 +15,7 @@ export type SubjectState = {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
-export function inferIdentifierType(
-  value: string | number,
-): IdentifierType {
+export function inferIdentifierType(value: string | number): IdentifierType {
   if (typeof value === "number") return "id"
   if (UUID_RE.test(value)) return "uuid"
   return "slug"

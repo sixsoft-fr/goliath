@@ -1,9 +1,9 @@
 const WeightUnits = {
   KG: "kg",
   TONS: "tons",
-} as const;
+} as const
 
-type WeightUnit = (typeof WeightUnits)[keyof typeof WeightUnits];
+type WeightUnit = (typeof WeightUnits)[keyof typeof WeightUnits]
 
-export { WeightUnits };
-export type { WeightUnit };
+export { WeightUnits }
+export type { WeightUnit }

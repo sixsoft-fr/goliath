@@ -10,9 +10,7 @@ export const Page: FC<PropsWithChildren> = ({ children }) => {
       key={location.key}
       fallback={<Spinner className="size-8 w-full" />}
     >
-      <SubjectProvider>
-        {children}
-      </SubjectProvider>
+      <SubjectProvider>{children}</SubjectProvider>
     </Suspense>
   )
 }

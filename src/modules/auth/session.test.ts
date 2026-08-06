@@ -52,7 +52,8 @@ describe("attemptSilentRefresh", () => {
     setAccessToken("t")
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const path = new URL((input as Request).url).pathname
-      if (path === "/auth") return Promise.resolve(new Response(null, { status: 401 }))
+      if (path === "/auth")
+        return Promise.resolve(new Response(null, { status: 401 }))
       return Promise.resolve(new Response(null, { status: 404 }))
     })
 

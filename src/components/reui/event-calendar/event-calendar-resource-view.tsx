@@ -234,7 +234,7 @@ function EventCalendarResourceView({
           className={cn(
             "flex border-b pe-(--ec-scrollbar-w,0px)",
             !contained &&
-              "bg-background sticky top-(--ec-sticky-offset,0px) z-20",
+              "sticky top-(--ec-sticky-offset,0px) z-20 bg-background",
             viewConfig.classNames?.timeGridHeader
           )}
         >
@@ -275,7 +275,7 @@ function EventCalendarResourceView({
                     // one bar-row tall and centers the label so it sits on the SAME
                     // baseline as the first all-day chip and stays top-aligned when
                     // the chips wrap onto more lanes (mirrors the time-grid label)
-                    "text-muted-foreground w-(--ec-gutter-width,4.5rem) shrink-0 border-e ps-2 pe-2.5 pt-1.5",
+                    "w-(--ec-gutter-width,4.5rem) shrink-0 border-e ps-2 pe-2.5 pt-1.5 text-muted-foreground",
                     viewConfig.classNames?.allDayLabel
                   )}
                 >
@@ -671,7 +671,7 @@ function EventCalendarResourceColumn({
             <EventCalendarEvent
               segment={segment}
               className={cn(
-                columnCount > 1 && "ring-background ring-1",
+                columnCount > 1 && "ring-1 ring-background",
                 // short chips: single centered row, exact-fit line height so
                 // the title never slices mid-glyph
                 endMin - startMin < viewConfig.compactEventMinutes
@@ -750,7 +750,7 @@ function EventCalendarResourceColumn({
         <div
           data-slot="event-calendar-slot-draft"
           className={cn(
-            "border-primary/40 bg-primary/5 pointer-events-none absolute inset-x-0.5 z-40 rounded-sm border border-dashed",
+            "pointer-events-none absolute inset-x-0.5 z-40 rounded-sm border border-dashed border-primary/40 bg-primary/5",
             viewConfig.classNames?.slotDraft
           )}
           style={minuteBlockStyle(

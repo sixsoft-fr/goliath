@@ -10,7 +10,7 @@ describe("toQueryString", () => {
         s: "-updated_at",
         page: 1,
         per_page: 10,
-      }),
+      })
     ).toBe("f[topNode]=1&f[account]=3&s=-updated_at&page=1&per_page=10")
   })
 
@@ -20,7 +20,7 @@ describe("toQueryString", () => {
         a: 1,
         b: undefined,
         c: "ok",
-      }),
+      })
     ).toBe("a=1&c=ok")
   })
 
@@ -31,7 +31,7 @@ describe("toQueryString", () => {
         count: 2,
         active: true,
         archived: false,
-      }),
+      })
     ).toBe("name=acme&count=2&active=true&archived=false")
   })
 
@@ -45,7 +45,7 @@ describe("adaptFilters", () => {
     expect(
       adaptFilters({
         filters: { topNode: 1, account: 3 },
-      }),
+      })
     ).toBe("f[topNode]=1&f[account]=3&s=-updated_at&page=1&per_page=10")
   })
 
@@ -66,13 +66,13 @@ describe("adaptFilters", () => {
         per_page: 25,
         sort: "name",
         filters: { status: "active" },
-      }),
+      })
     ).toBe("f[status]=active&s=name&query=acme&page=2&per_page=25")
   })
 
   it("applique un sort custom", () => {
     expect(adaptFilters({ sort: "name,-updated_at" })).toBe(
-      "s=name,-updated_at&page=1&per_page=10",
+      "s=name,-updated_at&page=1&per_page=10"
     )
   })
 
@@ -84,7 +84,7 @@ describe("adaptFilters", () => {
           account: null,
           status: undefined,
         },
-      }),
+      })
     ).toBe("f[topNode]=1&s=-updated_at&page=1&per_page=10")
   })
 
@@ -92,7 +92,7 @@ describe("adaptFilters", () => {
     expect(
       adaptFilters({
         filters: { tags: ["a", "b"] },
-      }),
+      })
     ).toBe("f[tags]=a,b&s=-updated_at&page=1&per_page=10")
   })
 
@@ -100,7 +100,7 @@ describe("adaptFilters", () => {
     expect(
       adaptFilters({
         filters: { status: ["active", "pending"] },
-      }),
+      })
     ).toBe("f[status]=active,pending&s=-updated_at&page=1&per_page=10")
   })
 
@@ -108,7 +108,7 @@ describe("adaptFilters", () => {
     expect(
       adaptFilters({
         filters: { status: [] },
-      }),
+      })
     ).toBe("s=-updated_at&page=1&per_page=10")
   })
 
@@ -116,15 +116,17 @@ describe("adaptFilters", () => {
     expect(
       adaptFilters({
         filters: { created_at: { gte: "2026-01-01", lte: "2026-01-31" } },
-      }),
-    ).toBe("f[created_at]=>=2026-01-01,<=2026-01-31&s=-updated_at&page=1&per_page=10")
+      })
+    ).toBe(
+      "f[created_at]=>=2026-01-01,<=2026-01-31&s=-updated_at&page=1&per_page=10"
+    )
   })
 
   it("sérialise un range avec la borne basse seule", () => {
     expect(
       adaptFilters({
         filters: { created_at: { gte: "2026-01-01" } },
-      }),
+      })
     ).toBe("f[created_at]=>=2026-01-01&s=-updated_at&page=1&per_page=10")
   })
 
@@ -132,7 +134,7 @@ describe("adaptFilters", () => {
     expect(
       adaptFilters({
         filters: { created_at: { lte: "2026-01-31" } },
-      }),
+      })
     ).toBe("f[created_at]=<=2026-01-31&s=-updated_at&page=1&per_page=10")
   })
 
@@ -140,7 +142,7 @@ describe("adaptFilters", () => {
     expect(
       adaptFilters({
         filters: { created_at: {} },
-      }),
+      })
     ).toBe("s=-updated_at&page=1&per_page=10")
   })
 })

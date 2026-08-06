@@ -21,7 +21,7 @@ describe("reconcile", () => {
   it("drop la visibilité des colonnes disparues", () => {
     const out = reconcile(
       { columnVisibility: { email: false, ghost: false } },
-      columns,
+      columns
     )
     expect(out.columnVisibility).toEqual({ email: false })
   })
@@ -34,7 +34,7 @@ describe("reconcile", () => {
           { id: "ghost", value: "x" },
         ],
       },
-      columns,
+      columns
     )
     expect(out.columnFilters).toEqual([{ id: "status", value: ["active"] }])
   })
@@ -47,7 +47,7 @@ describe("reconcile", () => {
           { id: "name", desc: false },
         ],
       },
-      columns,
+      columns
     )
     expect(out.sorting).toEqual([{ id: "name", desc: false }])
   })

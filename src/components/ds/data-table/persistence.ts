@@ -6,7 +6,8 @@ import type {
 
 // Bump pour invalider tout le stock quand le format change.
 const STORAGE_VERSION = "v1"
-const storageKey = (tableId: string) => `datatable:${STORAGE_VERSION}:${tableId}`
+const storageKey = (tableId: string) =>
+  `datatable:${STORAGE_VERSION}:${tableId}`
 
 /**
  * Vue persistée en localStorage. NB : `globalFilter` (recherche) et
@@ -28,7 +29,7 @@ export type PersistedView = {
  */
 export function reconcile(
   view: Partial<PersistedView>,
-  columnIds: string[],
+  columnIds: string[]
 ): Partial<PersistedView> {
   const known = new Set(columnIds)
 
@@ -37,10 +38,12 @@ export function reconcile(
   const columnOrder = [...storedOrder, ...appended]
 
   const columnVisibility: VisibilityState = Object.fromEntries(
-    Object.entries(view.columnVisibility ?? {}).filter(([id]) => known.has(id)),
+    Object.entries(view.columnVisibility ?? {}).filter(([id]) => known.has(id))
   )
 
-  const columnFilters = (view.columnFilters ?? []).filter((f) => known.has(f.id))
+  const columnFilters = (view.columnFilters ?? []).filter((f) =>
+    known.has(f.id)
+  )
   const sorting = (view.sorting ?? []).filter((s) => known.has(s.id))
 
   return {
@@ -55,7 +58,7 @@ export function reconcile(
 /** Charge + réconcilie la vue. Tolère l'absence/corruption du storage. */
 export function loadView(
   tableId: string,
-  columnIds: string[],
+  columnIds: string[]
 ): Partial<PersistedView> {
   try {
     const raw = localStorage.getItem(storageKey(tableId))

@@ -138,11 +138,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        {
-          appConfig.team.allowSwitchingTeams ? 
+        {appConfig.team.allowSwitchingTeams ? (
           <TeamSwitcher teams={appConfig.team.teams} />
-          : <TeamWithoutSwitcher team={appConfig.team.teams[0]} />
-        }
+        ) : (
+          <TeamWithoutSwitcher team={appConfig.team.teams[0]} />
+        )}
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

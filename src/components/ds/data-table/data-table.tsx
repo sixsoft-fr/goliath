@@ -72,8 +72,14 @@ function SortableHeader<T>({
   const canSort = Boolean(column.columnDef.meta?.sortKey)
   const sorted = column.getIsSorted()
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: column.id, disabled: !canReorder })
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: column.id, disabled: !canReorder })
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -90,7 +96,11 @@ function SortableHeader<T>({
       : column.id)
 
   const sortIcon =
-    sorted === "asc" ? ArrowUp01Icon : sorted === "desc" ? ArrowDown01Icon : UnfoldMoreIcon
+    sorted === "asc"
+      ? ArrowUp01Icon
+      : sorted === "desc"
+        ? ArrowDown01Icon
+        : UnfoldMoreIcon
 
   return (
     <TableHead ref={setNodeRef} style={style} colSpan={header.colSpan}>
@@ -114,7 +124,10 @@ function SortableHeader<T>({
             onClick={column.getToggleSortingHandler()}
           >
             {label}
-            <HugeiconsIcon icon={sortIcon} className="size-3.5 text-muted-foreground" />
+            <HugeiconsIcon
+              icon={sortIcon}
+              className="size-3.5 text-muted-foreground"
+            />
           </button>
         ) : (
           <span className="font-medium">{label}</span>
@@ -176,7 +189,7 @@ export function DataTable<T>({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor),
+    useSensor(KeyboardSensor)
   )
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -204,7 +217,7 @@ export function DataTable<T>({
       <div
         className={cn(
           "relative overflow-hidden rounded-xl border transition-opacity",
-          isFetching && !isLoading && "opacity-60",
+          isFetching && !isLoading && "opacity-60"
         )}
       >
         <DndContext
@@ -284,7 +297,10 @@ export function DataTable<T>({
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>

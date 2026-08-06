@@ -1,13 +1,13 @@
-import QR from "qrcode";
-import type { HTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import QR from "qrcode"
+import type { HTMLAttributes } from "react"
+import { cn } from "@/lib/utils"
 
 export type QRCodeProps = HTMLAttributes<HTMLDivElement> & {
-  data: string;
-  foreground: string;
-  background: string;
-  robustness?: "L" | "M" | "Q" | "H";
-};
+  data: string
+  foreground: string
+  background: string
+  robustness?: "L" | "M" | "Q" | "H"
+}
 
 export const QRCode = async ({
   data,
@@ -25,10 +25,10 @@ export const QRCode = async ({
     },
     width: 200,
     errorCorrectionLevel: robustness,
-  });
+  })
 
   if (!svg) {
-    throw new Error("Failed to generate QR code");
+    throw new Error("Failed to generate QR code")
   }
 
   return (
@@ -38,5 +38,5 @@ export const QRCode = async ({
       dangerouslySetInnerHTML={{ __html: svg }}
       {...props}
     />
-  );
-};
+  )
+}

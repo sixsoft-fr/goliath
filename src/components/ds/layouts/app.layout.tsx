@@ -1,8 +1,5 @@
 import { AppSidebar } from "@/components/ds/sidebar/app-sidebar"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Outlet } from "react-router"
 import { Page } from "@/modules/core/Page"
 

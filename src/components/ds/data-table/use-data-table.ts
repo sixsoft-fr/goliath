@@ -20,7 +20,9 @@ export type UseDataTableOptions<T> = {
 }
 
 function resolve<S>(updater: Updater<S>, prev: S): S {
-  return typeof updater === "function" ? (updater as (p: S) => S)(prev) : updater
+  return typeof updater === "function"
+    ? (updater as (p: S) => S)(prev)
+    : updater
 }
 
 /**
@@ -39,7 +41,7 @@ export function useDataTable<T>({
 }: UseDataTableOptions<T>) {
   const columnIds = useMemo(
     () => columns.map(columnId).filter(Boolean),
-    [columns],
+    [columns]
   )
   const keys = useMemo(() => columnKeys(columns), [columns])
 
@@ -49,14 +51,14 @@ export function useDataTable<T>({
 
   const [sorting, setSorting] = useState<SortingState>(initial.sorting ?? [])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
-    initial.columnFilters ?? [],
+    initial.columnFilters ?? []
   )
   const [globalFilter, setGlobalFilter] = useState("") // non persisté
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-    initial.columnVisibility ?? {},
+    initial.columnVisibility ?? {}
   )
   const [columnOrder, setColumnOrder] = useState<string[]>(
-    initial.columnOrder ?? columnIds,
+    initial.columnOrder ?? columnIds
   )
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -88,11 +90,19 @@ export function useDataTable<T>({
       columnFilters,
       sorting,
     })
-  }, [tableId, columnOrder, columnVisibility, pagination.pageSize, columnFilters, sorting])
+  }, [
+    tableId,
+    columnOrder,
+    columnVisibility,
+    pagination.pageSize,
+    columnFilters,
+    sorting,
+  ])
 
   const queries = useMemo(
-    () => buildQueries({ sorting, columnFilters, globalFilter, pagination }, keys),
-    [sorting, columnFilters, globalFilter, pagination, keys],
+    () =>
+      buildQueries({ sorting, columnFilters, globalFilter, pagination }, keys),
+    [sorting, columnFilters, globalFilter, pagination, keys]
   )
 
   return {

@@ -9,10 +9,10 @@ const keys = [
 
 test("matches the right module + language", () => {
   expect(matchLocaleKey(keys, "auth", "fr")).toBe(
-    "../modules/auth/locales/fr.json",
+    "../modules/auth/locales/fr.json"
   )
   expect(matchLocaleKey(keys, "wms", "fr")).toBe(
-    "../modules/wms/locales/fr.json",
+    "../modules/wms/locales/fr.json"
   )
 })
 

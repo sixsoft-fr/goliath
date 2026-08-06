@@ -10,9 +10,9 @@ const Incoterms = {
   DELIVERED_AT_PLACE_UNLOADED: "dpu",
   DELIVERED_AT_PLACE: "dap",
   DELIVERED_DUTY_PAID: "ddp",
-} as const;
+} as const
 
-type Incoterm = (typeof Incoterms)[keyof typeof Incoterms];
+type Incoterm = (typeof Incoterms)[keyof typeof Incoterms]
 
-export { Incoterms };
-export type { Incoterm };
+export { Incoterms }
+export type { Incoterm }

@@ -1,5 +1,9 @@
 import ky, { isHTTPError } from "ky"
-import { getAccessToken, setAccessToken, getTokenGeneration } from "@/modules/auth/token-store"
+import {
+  getAccessToken,
+  setAccessToken,
+  getTokenGeneration,
+} from "@/modules/auth/token-store"
 import { appConfig } from "@/config/app.config"
 
 // Pont vers l'état React : ky est hors-React et ne peut pas appeler logout()

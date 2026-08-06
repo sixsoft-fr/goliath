@@ -202,7 +202,12 @@ function EventCalendarEvent<TData = unknown>({
         />
       )}
       {occurrence.isRecurring && (
-        <HugeiconsIcon icon={RepeatIcon} strokeWidth={2} className="size-2.5 shrink-0 opacity-70" aria-hidden="true" />
+        <HugeiconsIcon
+          icon={RepeatIcon}
+          strokeWidth={2}
+          className="size-2.5 shrink-0 opacity-70"
+          aria-hidden="true"
+        />
       )}
       <span
         className={cn(
@@ -217,7 +222,7 @@ function EventCalendarEvent<TData = unknown>({
       {!occurrence.allDay &&
         segment.isStart &&
         (view === "month" ? (
-          <span className="text-muted-foreground shrink-0">
+          <span className="shrink-0 text-muted-foreground">
             {format(
               toZoned(occurrence.start, settings.timeZone),
               settings.i18n.formats.eventTime,
@@ -227,7 +232,7 @@ function EventCalendarEvent<TData = unknown>({
         ) : (
           <span
             className={cn(
-              "text-muted-foreground hidden @[8rem]:inline",
+              "hidden text-muted-foreground @[8rem]:inline",
               stackedBlock ? EVENT_CALENDAR_FADE_TRUNCATE : "truncate"
             )}
           >
@@ -283,7 +288,7 @@ function EventCalendarEvent<TData = unknown>({
   // Agenda default row: time column, color-dot badge, plain title
   const agendaDefaultContent = (
     <>
-      <span className="text-muted-foreground w-40 shrink-0 truncate tabular-nums">
+      <span className="w-40 shrink-0 truncate text-muted-foreground tabular-nums">
         {agendaTimeText}
       </span>
       <span
@@ -293,7 +298,12 @@ function EventCalendarEvent<TData = unknown>({
       />
       <span className="truncate text-sm">{event.title}</span>
       {occurrence.isRecurring && (
-        <HugeiconsIcon icon={RepeatIcon} strokeWidth={2} className="text-muted-foreground size-2.5 shrink-0" aria-hidden="true" />
+        <HugeiconsIcon
+          icon={RepeatIcon}
+          strokeWidth={2}
+          className="size-2.5 shrink-0 text-muted-foreground"
+          aria-hidden="true"
+        />
       )}
     </>
   )
@@ -366,7 +376,7 @@ function EventCalendarEvent<TData = unknown>({
       aria-hidden
       data-slot="event-calendar-resize-grip"
       className={cn(
-        "bg-foreground/40 rounded-full",
+        "rounded-full bg-foreground/40",
         timedBlock ? "h-0.5 w-2.5" : "h-2.5 w-0.5",
         viewConfig.classNames?.resizeGrip
       )}
@@ -484,8 +494,8 @@ function EventCalendarEvent<TData = unknown>({
       settings.onEventDoubleClick?.(occurrence, e)
     },
     className: cn(
-      "group/ec-event text-foreground relative flex w-full min-w-0 cursor-pointer touch-none items-center overflow-hidden text-start select-none",
-      "focus-visible:ring-ring/50 outline-none focus-visible:ring-2",
+      "group/ec-event relative flex w-full min-w-0 cursor-pointer touch-none items-center overflow-hidden text-start text-foreground select-none",
+      "outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
       preview && "pointer-events-none",
       view === "agenda"
         ? // plain list row: color lives in the dot badge, not a tinted pill;

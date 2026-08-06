@@ -12,8 +12,6 @@ const STATUS_OPTIONS = [
   { value: "inactive" },
 ] as const
 
-
-
 /**
  * Colonnes de référence. Aucun `header` (le DataTable résout `users:fields.<id>`).
  * `sortKey`/`filter.key` = clés serveur whitelistées spatie (allowedSorts/Filters).
@@ -30,7 +28,9 @@ export const usersColumns: ColumnDef<User>[] = [
   {
     id: "status",
     accessorFn: (row) => (row as UserRow).current_status?.name ?? undefined,
-    cell: ({ getValue }) => <StatusCell value={getValue<string | undefined>()} ns="users" />,
+    cell: ({ getValue }) => (
+      <StatusCell value={getValue<string | undefined>()} ns="users" />
+    ),
     meta: {
       filter: {
         key: "status",
@@ -43,6 +43,9 @@ export const usersColumns: ColumnDef<User>[] = [
     id: "created_at",
     accessorKey: "created_at",
     cell: ({ getValue }) => <DateCell value={getValue()} />,
-    meta: { sortKey: "created_at", filter: { key: "created_at", type: "dateRange" } },
+    meta: {
+      sortKey: "created_at",
+      filter: { key: "created_at", type: "dateRange" },
+    },
   },
 ]

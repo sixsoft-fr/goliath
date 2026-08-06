@@ -16,7 +16,7 @@ describe("inferIdentifierType", () => {
 
   it("maps UUID string to uuid", () => {
     expect(inferIdentifierType("550e8400-e29b-41d4-a716-446655440000")).toBe(
-      "uuid",
+      "uuid"
     )
   })
 
@@ -41,7 +41,7 @@ const sampleModel: Model = {
 describe("useSubject", () => {
   it("throws outside SubjectProvider", () => {
     expect(() => renderHook(() => useSubject())).toThrow(
-      "useSubject must be used within <SubjectProvider>",
+      "useSubject must be used within <SubjectProvider>"
     )
   })
 
@@ -56,7 +56,7 @@ describe("useSubject", () => {
 
     expect(result.current.resource).toBe("users")
     expect(result.current.identifier).toBe(
-      "550e8400-e29b-41d4-a716-446655440000",
+      "550e8400-e29b-41d4-a716-446655440000"
     )
     expect(result.current.identifierType).toBe("uuid")
   })
@@ -86,10 +86,7 @@ describe("useSubject", () => {
     const { result } = renderHook(() => useSubject(), { wrapper })
 
     act(() => {
-      result.current
-        .setResource("users")
-        .setIdentifier(1)
-        .setModel(sampleModel)
+      result.current.setResource("users").setIdentifier(1).setModel(sampleModel)
     })
     act(() => {
       result.current.clear()

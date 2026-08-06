@@ -5,11 +5,11 @@ export type User = Model & {
   emailVerifiedAt: Date | null
 
   name: string
-  locale: string;
-  avatar: string | null;
+  locale: string
+  avatar: string | null
   slug: string
 
-  account_id: number;
+  account_id: number
 }
 
 export type AuthSession = {

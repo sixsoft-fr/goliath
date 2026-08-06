@@ -151,7 +151,8 @@ describe("api client", () => {
     vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
       const req = input as Request
       const path = pathOf(req)
-      if (path === "/auth/refresh") return Promise.resolve(json({ accessToken: "fresh" }))
+      if (path === "/auth/refresh")
+        return Promise.resolve(json({ accessToken: "fresh" }))
       if (path === "/orders") {
         orderCalls.push(req)
         return orderCalls.length === 1

@@ -31,4 +31,4 @@ export function TeamWithoutSwitcher({
   )
 }
 
-export default TeamWithoutSwitcher;
+export default TeamWithoutSwitcher

@@ -88,7 +88,7 @@ export function Home() {
         apiRef={apiRef}
         className="h-svh w-full p-4"
       >
-        <div className="flex flex-wrap items-center gap-2 pb-2 pe-2">
+        <div className="flex flex-wrap items-center gap-2 pe-2 pb-2">
           <EventCalendarNav className="min-w-0 flex-1" />
           <EventCalendarToolbar>
             <Button size="sm" onClick={addEvent}>

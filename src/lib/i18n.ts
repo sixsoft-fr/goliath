@@ -26,7 +26,7 @@ const backend: BackendModule = {
     if (!key) return callback(null, {})
     loaders[key]().then(
       (mod) => callback(null, mod.default),
-      (err: unknown) => callback(err as Error, null),
+      (err: unknown) => callback(err as Error, null)
     )
   },
 }

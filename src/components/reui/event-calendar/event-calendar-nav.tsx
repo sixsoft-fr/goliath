@@ -34,7 +34,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowLeft01Icon, ArrowRight01Icon, ArrowDown01Icon, Calendar04Icon } from "@hugeicons/core-free-icons"
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  ArrowDown01Icon,
+  Calendar04Icon,
+} from "@hugeicons/core-free-icons"
 
 /** Configured nav button variant/size (viewConfig.navButtonVariant/Size)
  *  plus the shared classNames.navButton hook, merged on every nav button. */
@@ -176,7 +181,12 @@ function EventCalendarNavPrev({
         {...props}
       >
         {children ?? (
-          <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} className="size-4" aria-hidden="true" />
+          <HugeiconsIcon
+            icon={ArrowLeft01Icon}
+            strokeWidth={2}
+            className="size-4"
+            aria-hidden="true"
+          />
         )}
       </Button>
     </NavTooltip>
@@ -208,7 +218,12 @@ function EventCalendarNavNext({
         {...props}
       >
         {children ?? (
-          <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} className="size-4" aria-hidden="true" />
+          <HugeiconsIcon
+            icon={ArrowRight01Icon}
+            strokeWidth={2}
+            className="size-4"
+            aria-hidden="true"
+          />
         )}
       </Button>
     </NavTooltip>
@@ -325,7 +340,12 @@ function EventCalendarViewSwitcher({
           {children ?? (
             <>
               {viewLabel(view)}
-              <HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} className="size-4 opacity-60" aria-hidden="true" />
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                strokeWidth={2}
+                className="size-4 opacity-60"
+                aria-hidden="true"
+              />
             </>
           )}
         </DropdownMenuTrigger>
@@ -343,7 +363,7 @@ function EventCalendarViewSwitcher({
         <DropdownMenuGroup>
           <DropdownMenuLabel
             className={cn(
-              "text-muted-foreground font-normal",
+              "font-normal text-muted-foreground",
               viewConfig.classNames?.viewSwitcherLabel
             )}
           >
@@ -396,7 +416,7 @@ function EventCalendarViewShortcut({ children }: { children: ReactNode }) {
     <kbd
       data-slot="event-calendar-view-shortcut"
       className={cn(
-        "text-muted-foreground ms-auto inline-flex size-5 shrink-0 items-center justify-center rounded-sm border font-sans text-xs",
+        "ms-auto inline-flex size-5 shrink-0 items-center justify-center rounded-sm border font-sans text-xs text-muted-foreground",
         viewConfig.classNames?.viewShortcut
       )}
     >
@@ -476,7 +496,12 @@ function EventCalendarDatePicker({
           {...props}
         >
           {children ?? (
-            <HugeiconsIcon icon={Calendar04Icon} strokeWidth={2} className="size-4" aria-hidden="true" />
+            <HugeiconsIcon
+              icon={Calendar04Icon}
+              strokeWidth={2}
+              className="size-4"
+              aria-hidden="true"
+            />
           )}
         </PopoverTrigger>
       </NavTooltip>
@@ -563,7 +588,7 @@ function EventCalendarNav({
     "data-slot": "event-calendar-nav",
     className: cn(
       "flex min-w-0 flex-wrap items-center gap-1 px-2 py-2",
-      viewConfig.stickyNav && "bg-background sticky top-0 z-30",
+      viewConfig.stickyNav && "sticky top-0 z-30 bg-background",
       viewConfig.classNames?.nav,
       className
     ),

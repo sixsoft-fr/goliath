@@ -6,4 +6,4 @@ export class UsersService extends Service {
   }
 }
 
-export const usersService = new UsersService();
+export const usersService = new UsersService()

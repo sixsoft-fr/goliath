@@ -1,11 +1,11 @@
 export type ApiConfig = {
-    baseUrl: string;
+  baseUrl: string
 }
 
 if (!import.meta.env.VITE_API_URL) {
-    throw new Error("VITE_API_URL is not set");
+  throw new Error("VITE_API_URL is not set")
 }
 
 export const apiConfig: ApiConfig = {
-    baseUrl: import.meta.env.VITE_API_URL,
+  baseUrl: import.meta.env.VITE_API_URL,
 }

@@ -29,22 +29,22 @@ import { useTranslation } from "react-i18next"
 import { api } from "@/lib/api"
 
 export function NavUser() {
-  const navigate = useNavigate();
-  const { isMobile } = useSidebar();
-  const { logout, user } = useAuth();
-  const { t } = useTranslation("auth");
+  const navigate = useNavigate()
+  const { isMobile } = useSidebar()
+  const { logout, user } = useAuth()
+  const { t } = useTranslation("auth")
 
   const handleLogout = () => {
     // Invalide le cookie de refresh httpOnly côté serveur, sinon un reload
     // pourrait restaurer la session via attemptSilentRefresh. Fire-and-forget :
     // navigate() est client-side, la requête n'est donc pas annulée.
-    api.delete("auth").catch(() => {});
-    logout();
-    navigate("/login");
+    api.delete("auth").catch(() => {})
+    logout()
+    navigate("/login")
   }
 
   if (!user) {
-    return null;
+    return null
   }
 
   return (
@@ -80,7 +80,10 @@ export function NavUser() {
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar>
-                    <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
+                    <AvatarImage
+                      src={user.avatar ?? undefined}
+                      alt={user.name}
+                    />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">

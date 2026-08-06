@@ -94,9 +94,14 @@ function EventCalendarAgendaView({
           {viewConfig.renderNoEvents?.() ?? (
             <>
               <IconStack>
-                <HugeiconsIcon icon={Calendar04Icon} strokeWidth={2} className="size-5" aria-hidden="true" />
+                <HugeiconsIcon
+                  icon={Calendar04Icon}
+                  strokeWidth={2}
+                  className="size-5"
+                  aria-hidden="true"
+                />
               </IconStack>
-              <span className="text-muted-foreground text-sm">
+              <span className="text-sm text-muted-foreground">
                 {settings.i18n.labels.noEvents}
               </span>
             </>
@@ -134,7 +139,7 @@ function EventCalendarAgendaView({
                   role="heading"
                   aria-level={3}
                   className={cn(
-                    "bg-muted/60 sticky top-0 z-10 flex items-baseline justify-between gap-4 border-b px-4 py-2",
+                    "sticky top-0 z-10 flex items-baseline justify-between gap-4 border-b bg-muted/60 px-4 py-2",
                     // The custom ScrollArea's overlay scrollbar (w-2.5 = 10px)
                     // is painted UNDER this sticky, z-10, opaque header, so the
                     // thumb vanishes behind the day bar at the top of the view.
@@ -148,13 +153,13 @@ function EventCalendarAgendaView({
                 >
                   <span
                     className={cn(
-                      "text-foreground font-semibold",
+                      "font-semibold text-foreground",
                       isToday(day) && "text-primary"
                     )}
                   >
                     {weekday}
                   </span>
-                  <span className="text-muted-foreground font-medium tabular-nums">
+                  <span className="font-medium text-muted-foreground tabular-nums">
                     {dayDate}
                   </span>
                 </div>
@@ -227,7 +232,7 @@ function EventCalendarAgendaItem({
       segment={segment}
       className={cn(
         // read-only list: hover only, no selected/focused styling on click
-        "hover:bg-accent/40 gap-3 rounded-none border-b px-4 py-2.5 transition-colors",
+        "gap-3 rounded-none border-b px-4 py-2.5 transition-colors hover:bg-accent/40",
         viewConfig.classNames?.agendaItem
       )}
     />

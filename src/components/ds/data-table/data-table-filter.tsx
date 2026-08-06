@@ -8,7 +8,11 @@ import type { DateRange } from "react-day-picker"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -145,9 +149,15 @@ function BooleanFilter<T>({ column, label }: Ctx<T>) {
               column.setFilterValue(v === "all" ? undefined : v === "true")
             }
           >
-            <DropdownMenuRadioItem value="all">{t("table.all")}</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="true">{t("table.yes")}</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="false">{t("table.no")}</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="all">
+              {t("table.all")}
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="true">
+              {t("table.yes")}
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="false">
+              {t("table.no")}
+            </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>

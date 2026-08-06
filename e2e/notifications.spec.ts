@@ -32,13 +32,13 @@ const notification = (data: unknown) => ({
 // pour ne PAS intercepter les modules source Vite (/src/modules/notifications/…).
 async function mockNotifications(
   page: Page,
-  { unread, items }: { unread: number; items: unknown[] },
+  { unread, items }: { unread: number; items: unknown[] }
 ) {
   await page.route(/\/api\/notifications\/unread-count/, (route) =>
-    route.fulfill({ json: { count: unread } }),
+    route.fulfill({ json: { count: unread } })
   )
   await page.route(/\/api\/notifications(\?|$)/, (route) =>
-    route.fulfill({ json: { data: items } }),
+    route.fulfill({ json: { data: items } })
   )
 }
 
@@ -58,7 +58,9 @@ test("cliquer sur Notifications affiche le message sans crash React", async ({
   // Forme exacte du bug : `data` est un objet, pas une string JSON.
   await mockNotifications(page, {
     unread: 1,
-    items: [notification({ title: "Titre", message: "Vous avez un nouveau message" })],
+    items: [
+      notification({ title: "Titre", message: "Vous avez un nouveau message" }),
+    ],
   })
 
   // Échoue le test à la moindre erreur JS non catchée (le crash React en était une).

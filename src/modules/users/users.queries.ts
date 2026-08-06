@@ -11,7 +11,7 @@ import type { User } from "./users.types"
 // Dé-wrappe le KyResponse en PaginatedResponse pour la DataTable (data + meta).
 // keepPreviousData : anti-flash au changement de filtre/tri/page.
 export const useUsers = (
-  query: TableQueries,
+  query: TableQueries
 ): UseQueryResult<PaginatedResponse<User>, Error> => {
   return useQuery({
     queryKey: ["users", "list", query],
@@ -20,7 +20,9 @@ export const useUsers = (
   })
 }
 
-export const useUser = (id: string): UseQueryResult<KyResponse<User>, Error> => {
+export const useUser = (
+  id: string
+): UseQueryResult<KyResponse<User>, Error> => {
   return useQuery({
     queryKey: ["users", id],
     queryFn: () => usersService.setIdentifier(id).get<User>(),

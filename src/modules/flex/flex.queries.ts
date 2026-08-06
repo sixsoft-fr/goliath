@@ -11,9 +11,9 @@ import {
 // keepPreviousData : anti-flash au changement de filtre/tri/page.
 export const useFlexList = <T>(
   resource: string,
-  query: TableQueries,
+  query: TableQueries
 ): UseQueryResult<PaginatedResponse<T>, Error> => {
-  const service = new FlexService(resource);
+  const service = new FlexService(resource)
   return useQuery({
     queryKey: [resource, "list", query],
     queryFn: () => service.list<T>(query).then((r) => r.json()),
@@ -21,8 +21,11 @@ export const useFlexList = <T>(
   })
 }
 
-export const useFlex = <T>(resource: string, id: string | number): UseQueryResult<KyResponse<T>, Error> => {
-  const service = new FlexService(resource);
+export const useFlex = <T>(
+  resource: string,
+  id: string | number
+): UseQueryResult<KyResponse<T>, Error> => {
+  const service = new FlexService(resource)
   return useQuery({
     queryKey: [resource, id],
     queryFn: () => service.setIdentifier(id).get<T>(),

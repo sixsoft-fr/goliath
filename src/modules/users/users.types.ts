@@ -1,1 +1,1 @@
-export type { User } from "@/modules/auth/types";
+export type { User } from "@/modules/auth/types"

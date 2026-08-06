@@ -36,7 +36,10 @@ export function columnKeys<T>(columns: ColumnDef<T>[]): KeyLookup {
  * plusieurs tris sont joints par virgule. `-` = desc. `undefined` si vide
  * (adaptFilters applique alors le défaut `-updated_at`).
  */
-export function buildSort(sorting: SortingState, keys: KeyLookup): string | undefined {
+export function buildSort(
+  sorting: SortingState,
+  keys: KeyLookup
+): string | undefined {
   if (!sorting.length) return undefined
   return sorting
     .map((s) => `${s.desc ? "-" : ""}${keys[s.id]?.sortKey ?? s.id}`)
@@ -49,7 +52,7 @@ export function buildSort(sorting: SortingState, keys: KeyLookup): string | unde
  */
 export function buildFilters(
   columnFilters: ColumnFiltersState,
-  keys: KeyLookup,
+  keys: KeyLookup
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   for (const { id, value } of columnFilters) {

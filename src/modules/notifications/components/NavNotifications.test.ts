@@ -27,7 +27,9 @@ describe("notificationLabel", () => {
   })
 
   it("handles data already parsed as object", () => {
-    expect(notificationLabel(notification({ title: "T", message: "M" }))).toBe("M")
+    expect(notificationLabel(notification({ title: "T", message: "M" }))).toBe(
+      "M"
+    )
   })
 })
 

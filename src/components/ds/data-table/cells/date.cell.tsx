@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 import { formatDateTime } from "@/lib/date"
 
 interface DateCellProps {
-    value: unknown
+  value: unknown
 }
 
 export function DateCell({ value }: DateCellProps) {

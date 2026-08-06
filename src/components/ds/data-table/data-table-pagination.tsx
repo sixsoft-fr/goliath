@@ -27,7 +27,9 @@ export function DataTablePagination<T>({ table }: { table: Table<T> }) {
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">{t("table.rowsPerPage")}</span>
+          <span className="text-muted-foreground">
+            {t("table.rowsPerPage")}
+          </span>
           <DropdownMenu>
             <DropdownMenuTrigger
               render={

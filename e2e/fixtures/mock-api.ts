@@ -29,19 +29,19 @@ export const test = base.extend({
           ? route.fulfill({ json: { token: "e2e-mock-token", user: mockUser } })
           : route.fulfill({
               json: { user: mockUser, is_super_admin: false, authority: [] },
-            }),
+            })
       )
       // Défauts notifications (une spec peut surcharger : sa route, enregistrée
       // après, a la priorité). unread-count enregistré avant la route générale.
       await page.route(/\/api\/notifications\/unread-count/, (route) =>
-        route.fulfill({ json: { count: 0 } }),
+        route.fulfill({ json: { count: 0 } })
       )
       await page.route(/\/api\/notifications(\?|$)/, (route) =>
-        route.fulfill({ json: { data: [] } }),
+        route.fulfill({ json: { data: [] } })
       )
       // Auth de canal privé Reverb (hors /api, à la racine Laravel).
       await page.route(/\/broadcasting\/auth/, (route) =>
-        route.fulfill({ json: { auth: "" } }),
+        route.fulfill({ json: { auth: "" } })
       )
       // WebSocket Reverb (laravel-api.test:8080) : absorbé, pas de serveur en CI.
       await page.routeWebSocket(/:8080\//, () => {})

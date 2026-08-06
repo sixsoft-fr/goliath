@@ -7,7 +7,7 @@
 export function matchLocaleKey(
   keys: string[],
   ns: string,
-  lng: string,
+  lng: string
 ): string | undefined {
   const suffix = `/modules/${ns}/locales/${lng}.json`
   return keys.find((path) => path.endsWith(suffix))

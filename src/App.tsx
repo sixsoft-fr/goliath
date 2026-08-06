@@ -7,6 +7,7 @@ const Home = lazy(() => import("@/modules/home/pages/Home"))
 const NotFound = lazy(() => import("@/modules/errors/pages/NotFound"))
 const Login = lazy(() => import("@/modules/auth/pages/Login"))
 const Users = lazy(() => import("@/modules/users/pages/UsersPage"))
+const Show = lazy(() => import("./components/ds/resources/show"))
 
 export function App() {
   return (
@@ -23,6 +24,7 @@ export function App() {
         }
       >
         <Route index element={<Home />} />
+        <Route path=":resource/:identifier" element={<Show />} />
         <Route path="users" element={<Users />} />
       </Route>
 

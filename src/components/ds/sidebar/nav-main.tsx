@@ -16,25 +16,21 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
 import { useTranslation } from "react-i18next"
+import type { SidebarItem } from "@/modules/sidebar/sidebar.types"
 
 export function NavMain({
   items,
+  sectionTitle,
+  className,
 }: {
-  items: {
-    title: string
-    url: string
-    icon?: React.ReactNode
-    isActive?: boolean
-    items?: {
-      title: string
-      url: string
-    }[]
-  }[]
+  items: SidebarItem[],
+  sectionTitle: string
+  className?: string
 }) {
   const { t } = useTranslation("sidebar")
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+    <SidebarGroup className={className}>
+      <SidebarGroupLabel>{t(sectionTitle)}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <Collapsible
@@ -59,6 +55,7 @@ export function NavMain({
                 {item.items?.map((subItem) => (
                   <SidebarMenuSubItem key={subItem.title}>
                     <SidebarMenuSubButton render={<a href={subItem.url} />}>
+                      {subItem.icon}
                       <span>{t(subItem.title)}</span>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>

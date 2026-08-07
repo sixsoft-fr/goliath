@@ -6,7 +6,10 @@
     "admin": {
       "title": "Admin",
       "users-menu": "People",
-      "users": "Users"
+      "users": "Users",
+      "products-menu": "Products",
+      "products": "Products",
+      "referentials": "Referentials"
     }
   }
 }

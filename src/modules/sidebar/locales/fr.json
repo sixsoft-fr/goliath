@@ -6,7 +6,10 @@
     "admin": {
       "title": "Administration",
       "users-menu": "Personnes",
-      "users": "Utilisateurs"
+      "users": "Utilisateurs",
+      "products-menu": "Produits",
+      "products": "Produits",
+      "referentials": "Référentiels"
     }
   }
 }

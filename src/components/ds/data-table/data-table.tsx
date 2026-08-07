@@ -1,10 +1,15 @@
+import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  type ColumnDef,
   type Header,
+  type Row,
 } from "@tanstack/react-table"
+import type { DynamicModel } from "@/modules/core"
+import { ActionsCell } from "./cells/actions/actions.cell"
 import type { PaginatedResponse } from "@/modules/core/service/paginated.types"
 import {
   DndContext,
@@ -45,6 +50,23 @@ import type { DataTableInstance } from "./use-data-table"
 
 type Meta = PaginatedResponse<unknown>["meta"] | undefined
 
+/**
+ * Config de la colonne d'actions (ajoutée à chaque table). `View` est actif par
+ * défaut (navigue vers la page show). Les autres n'apparaissent que si leur flag
+ * est vrai ET que le handler correspondant est fourni. Play et Rerun s'excluent.
+ */
+export type RowActions<T> = {
+  isViewable?: boolean
+  isEditable?: boolean
+  isDeletable?: boolean
+  isPlayable?: boolean
+  isRerunnable?: boolean
+  onEdit?: (row: T) => void
+  onDelete?: (row: T) => void
+  onPlay?: (row: T) => void
+  onRerun?: (row: T) => void
+}
+
 export type DataTableProps<T> = {
   instance: DataTableInstance<T>
   /** Lignes de la page courante (fournies par l'appelant via react-query). */
@@ -56,6 +78,8 @@ export type DataTableProps<T> = {
   isError?: boolean
   /** Clic sur une ligne → reçoit la donnée (row.original). Rend la ligne interactive. */
   onRowClick?: (row: T) => void
+  /** Personnalise la colonne d'actions. Absent → View seul. */
+  rowActions?: RowActions<T>
 }
 
 // En-tête : poignée de drag (dnd-kit) + tri au clic (si sortKey) + libellé i18n.
@@ -150,6 +174,7 @@ export function DataTable<T>({
   isFetching,
   isError,
   onRowClick,
+  rowActions,
 }: DataTableProps<T>) {
   const {
     namespace,
@@ -161,9 +186,39 @@ export function DataTable<T>({
   } = instance
   const { t } = useTranslation("core")
 
+  // Colonne d'actions ajoutée à chaque table : non triable/réordonnable/masquable,
+  // épinglée en fin. Adapte les handlers RowActions<T> vers la signature Row.
+  const columnsWithActions = useMemo<ColumnDef<T>[]>(() => {
+    const wrap = (fn?: (row: T) => void) =>
+      fn ? (r: Row<DynamicModel<unknown>>) => fn(r.original as T) : undefined
+
+    const actions: ColumnDef<T> = {
+      id: "__actions",
+      header: () => null,
+      enableHiding: false,
+      enableSorting: false,
+      meta: { noReorder: true },
+      cell: ({ row }) => (
+        <ActionsCell
+          row={row as unknown as Row<DynamicModel<unknown>>}
+          isViewable={rowActions?.isViewable ?? true}
+          isEditable={rowActions?.isEditable}
+          isDeletable={rowActions?.isDeletable}
+          isPlayable={rowActions?.isPlayable}
+          isRerunnable={rowActions?.isRerunnable}
+          onEdit={wrap(rowActions?.onEdit)}
+          onDelete={wrap(rowActions?.onDelete)}
+          onPlay={wrap(rowActions?.onPlay)}
+          onRerun={wrap(rowActions?.onRerun)}
+        />
+      ),
+    }
+    return [...columns, actions]
+  }, [columns, rowActions])
+
   const table = useReactTable<T>({
     data,
-    columns,
+    columns: columnsWithActions,
     state: {
       sorting: instance.sorting,
       columnFilters: instance.columnFilters,

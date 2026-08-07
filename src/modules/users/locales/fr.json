@@ -12,5 +12,10 @@
       "pending": "En attente",
       "inactive": "Inactif"
     }
+  },
+  "delete": {
+    "title": "Supprimer l'utilisateur",
+    "description": "Êtes-vous sûr de vouloir supprimer cet utilisateur ?",
+    "button": "Supprimer"
   }
 }

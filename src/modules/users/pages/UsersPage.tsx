@@ -5,7 +5,8 @@ import { useUsers } from "../users.queries"
 import { usersColumns } from "../users.columns"
 import { useNavigate } from "react-router"
 import { useSubject } from "@/modules/core"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { ConfirmDeleteModal } from "@/components/ds/resources/delete/ConfirmDeleteModal"
 
 export default function UsersPage() {
   const { t } = useTranslation("users")
@@ -22,6 +23,12 @@ export default function UsersPage() {
     setResource("users")
   }, [setResource])
 
+  /**
+   * Delete Concern
+   */
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteIdentifier, setDeleteIdentifier] = useState<string | null>(null);
+
   return (
     <div className="flex flex-col gap-4 p-4">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
@@ -35,6 +42,27 @@ export default function UsersPage() {
         onRowClick={(element) => {
           navigate(`${element.uuid}`)
         }}
+        rowActions={{
+          isViewable: true,
+          isEditable: true,
+          isDeletable: true,
+          isPlayable: true,
+          isRerunnable: true,
+          onEdit: (row) => {
+            navigate(`${row.uuid}/edit`)
+          },
+          onDelete: (row) => {
+            setDeleteIdentifier(row.uuid);
+            setIsDeleteModalOpen(true);
+          }
+        }}
+      />
+      <ConfirmDeleteModal
+        resource="users"
+        isOpen={isDeleteModalOpen}
+        identifier={deleteIdentifier ?? ""}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onDelete={() => {}}
       />
     </div>
   )

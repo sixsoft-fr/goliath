@@ -28,12 +28,12 @@ export const sidebarConfig: SidebarConfig = {
       items: [
         {
           title: "sidebar.admin.products",
-          url: "/app/products",
+          url: "/admin/products",
           icon: <HugeiconsIcon icon={ShoppingCart} strokeWidth={2} />,
         },
         {
           title: "sidebar.admin.referentials",
-          url: "/app/referentials",
+          url: "/admin/referentials",
           icon: <HugeiconsIcon icon={ShoppingCart} strokeWidth={2} />,
         },
       ]

@@ -1,21 +1,19 @@
 import { Navigate } from "react-router"
 import { AuthShell } from "@/modules/auth/components/AuthShell"
-import { LoginForm } from "@/modules/auth/components/LoginForm"
+import { ForgotPasswordForm } from "@/modules/auth/components/ForgotPasswordForm"
 import { useAuth } from "@/modules/auth/auth.context"
 
-export function Login() {
+export function ForgotPassword() {
   const { isAuthenticated, isBootstrapping } = useAuth()
 
-  // Symétrique de RequireAuth : attendre le bootstrap, puis si une session a
-  // été restaurée (cookie de refresh valide), ne pas afficher le formulaire.
   if (isBootstrapping) return null
   if (isAuthenticated) return <Navigate to="/app" replace />
 
   return (
     <AuthShell>
-      <LoginForm />
+      <ForgotPasswordForm />
     </AuthShell>
   )
 }
 
-export default Login
+export default ForgotPassword

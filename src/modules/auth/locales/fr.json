@@ -5,5 +5,46 @@
     "billing": "Facturation",
     "notifications": "Notifications",
     "logout": "Se déconnecter"
+  },
+  "login": {
+    "title": "Connexion à votre compte",
+    "subtitle": "Saisissez votre e-mail pour vous connecter",
+    "email": "E-mail",
+    "emailPlaceholder": "m@exemple.com",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "submit": "Se connecter",
+    "submitPending": "Connexion…",
+    "orContinueWith": "Ou continuer avec",
+    "loginWithGithub": "Se connecter avec GitHub",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "signUp": "Créer un compte"
+  },
+  "forgotPassword": {
+    "title": "Mot de passe oublié ?",
+    "subtitle": "Saisissez votre e-mail et nous vous enverrons un lien de réinitialisation",
+    "email": "E-mail",
+    "emailPlaceholder": "m@exemple.com",
+    "submit": "Envoyer le lien",
+    "submitPending": "Envoi…",
+    "rememberPassword": "Vous vous souvenez de votre mot de passe ?",
+    "backToLogin": "Retour à la connexion",
+    "successTitle": "Vérifiez vos e-mails",
+    "successBody": "Si un compte correspond à cette adresse, nous vous avons envoyé un lien pour réinitialiser votre mot de passe."
+  },
+  "resetPassword": {
+    "title": "Réinitialiser votre mot de passe",
+    "subtitle": "Choisissez un nouveau mot de passe pour votre compte",
+    "email": "E-mail",
+    "emailPlaceholder": "m@exemple.com",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "submit": "Réinitialiser le mot de passe",
+    "submitPending": "Réinitialisation…",
+    "mismatch": "Les mots de passe ne correspondent pas.",
+    "backToLogin": "Retour à la connexion",
+    "invalidTitle": "Lien invalide",
+    "invalidBody": "Ce lien est manquant ou a expiré. Demandez-en un nouveau.",
+    "requestNew": "Demander un nouveau lien"
   }
 }

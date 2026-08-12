@@ -1,3 +1,5 @@
+import { Link } from "react-router"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,6 +18,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"form">) {
   const login = useLogin()
+  const { t } = useTranslation("auth")
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -34,30 +37,30 @@ export function LoginForm({
     >
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Login to your account</h1>
+          <h1 className="text-2xl font-bold">{t("login.title")}</h1>
           <p className="text-sm text-balance text-muted-foreground">
-            Enter your email below to login to your account
+            {t("login.subtitle")}
           </p>
         </div>
         <Field>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
+          <FieldLabel htmlFor="email">{t("login.email")}</FieldLabel>
           <Input
             id="email"
             name="email"
             type="email"
-            placeholder="m@example.com"
+            placeholder={t("login.emailPlaceholder")}
             required
           />
         </Field>
         <Field>
           <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <a
-              href="#"
+            <FieldLabel htmlFor="password">{t("login.password")}</FieldLabel>
+            <Link
+              to="/forgot-password"
               className="ml-auto text-sm underline-offset-4 hover:underline"
             >
-              Forgot your password?
-            </a>
+              {t("login.forgotPassword")}
+            </Link>
           </div>
           <Input id="password" name="password" type="password" required />
         </Field>
@@ -68,11 +71,11 @@ export function LoginForm({
             </FieldDescription>
           )}
           <Button type="submit" disabled={login.isPending}>
-            {login.isPending ? "Signing in…" : "Login"}
+            {login.isPending ? t("login.submitPending") : t("login.submit")}
           </Button>
         </Field>
         {appConfig.auth.enableSocialLogin && (
-          <FieldSeparator>Or continue with</FieldSeparator>
+          <FieldSeparator>{t("login.orContinueWith")}</FieldSeparator>
         )}
         <Field>
           {appConfig.auth.enableSocialLogin && (
@@ -83,14 +86,14 @@ export function LoginForm({
                   fill="currentColor"
                 />
               </svg>
-              Login with GitHub
+              {t("login.loginWithGithub")}
             </Button>
           )}
           {!appConfig.auth.inviteOnly && (
             <FieldDescription className="text-center">
-              Don&apos;t have an account?{" "}
+              {t("login.noAccount")}{" "}
               <a href="#" className="underline underline-offset-4">
-                Sign up
+                {t("login.signUp")}
               </a>
             </FieldDescription>
           )}

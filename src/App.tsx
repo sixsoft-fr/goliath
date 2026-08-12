@@ -6,6 +6,10 @@ import { RequireAuth } from "@/modules/auth/require-auth"
 const Home = lazy(() => import("@/modules/home/pages/Home"))
 const NotFound = lazy(() => import("@/modules/errors/pages/NotFound"))
 const Login = lazy(() => import("@/modules/auth/pages/Login"))
+const ForgotPassword = lazy(
+  () => import("@/modules/auth/pages/ForgotPassword"),
+)
+const ResetPassword = lazy(() => import("@/modules/auth/pages/ResetPassword"))
 const Users = lazy(() => import("@/modules/users/pages/UsersPage"))
 const Show = lazy(() => import("./components/ds/resources/show"))
 
@@ -14,6 +18,8 @@ export function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route
         path="app"
